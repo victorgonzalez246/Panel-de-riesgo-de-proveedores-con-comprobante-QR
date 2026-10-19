@@ -107,7 +107,8 @@ classDiagram
 │   └── workflow-consulta-cedula.json Webhook que usa el panel web
 ├── scripts/
 │   ├── build-workflow.js    genera el workflow copiando las clases a los nodos Code
-│   └── reset-db.js          restaura db.json
+│   ├── reset-db.js          restaura db.json
+│   └── configurar-correo.js guarda la credencial de Gmail en n8n
 └── docs/
     ├── documento-logica-negocio.docx / .pdf
     ├── diagrama-workflow.png
@@ -177,7 +178,7 @@ Al final de cada revisión se envía **un solo correo** de resumen, y solo si ha
 **Activar el correo (Gmail):**
 
 1. En la cuenta de Google, activar la verificación en 2 pasos y crear una **contraseña de aplicación** en https://myaccount.google.com/apppasswords.
-2. En n8n, crear (o editar) la credencial **SMTP** llamada `Gmail SMTP (Panel de riesgo)`: usuario = la cuenta de Gmail, contraseña = la contraseña de aplicación, host `smtp.gmail.com`, puerto `465`, SSL/TLS activado.
+2. Guardar la credencial en n8n con `node scripts/configurar-correo.js cuenta@gmail.com` (pide la contraseña de aplicación sin mostrarla y la importa con el CLI de n8n), o crearla a mano en n8n: credencial **SMTP** `Gmail SMTP (Panel de riesgo)`, usuario = la cuenta de Gmail, contraseña = la contraseña de aplicación, host `smtp.gmail.com`, puerto `465`, SSL/TLS activado. Si la cuenta tiene **Protección avanzada**, Google no permite contraseñas de aplicación.
 3. En el nodo **Configuración** del workflow, poner `correoRemitente` (la misma cuenta de Gmail) y `correoTesoreria` (quien recibe el resumen). En el repositorio quedan direcciones de ejemplo a propósito.
 
 Si el envío falla, el workflow no se detiene: los pagos ya quedaron registrados y el error se ve en la ejecución del nodo de correo.
