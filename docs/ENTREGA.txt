@@ -1,0 +1,107 @@
+==============================================================================
+ ENTREGA — LABORATORIO #1 · SOLUCIONES DE NEGOCIO: POO + n8n
+ Panel de riesgo de proveedores con comprobante QR (escenario 4)
+ Estudiante: Victor Gonzalez
+==============================================================================
+
+ENLACE DEL REPOSITORIO
+  https://github.com/victorgonzalez246/Panel-de-riesgo-de-proveedores-con-comprobante-QR
+
+  ⚠ IMPORTANTE ANTES DE ENTREGAR: el repositorio está PRIVADO. El profesor no
+    podrá abrir el enlace hasta que haga una de estas dos cosas en GitHub:
+      a) Hacerlo público:  Settings → General → Danger Zone →
+         "Change repository visibility" → Public
+      b) Invitar al profesor: Settings → Collaborators → Add people → su correo
+    Después de cambiarlo, abra el enlace en una ventana de incógnito para
+    comprobar que se ve.
+
+
+------------------------------------------------------------------------------
+ 1. QUÉ PIDE EL LABORATORIO (sección "Entregables" del PDF)
+------------------------------------------------------------------------------
+
+  [✔] Workflow de n8n funcionando — link al repositorio con el JSON exportado
+        → n8n/workflow-panel-riesgo.json        (workflow principal, 28 nodos)
+        → n8n/workflow-consulta-cedula.json     (webhook del panel, extra)
+
+  [✔] Código de las clases en JavaScript (POO) — en el mismo repositorio
+        → src/            (config, ReglaNegocio, Proveedor, Pago, ComprobanteQR,
+                           EvaluadorRiesgo, DiagnosticoProveedor,
+                           HistorialTendencia, ResumenRevision)
+        → main.js         (prueba las clases sin n8n: node main.js)
+        → tests/          (35 pruebas: npm test)
+
+  [✔] Documento de lógica de negocio (PDF o Word), 2 a 4 páginas
+        → docs/documento-logica-negocio.pdf     (4 páginas)  ← ADJUNTAR EN CLASSROOM
+        → docs/documento-logica-negocio.docx    (misma versión en Word)
+
+  [—] Presentación oral en vivo
+        → No aplica (el profesor indicó que no hay presentación).
+
+
+------------------------------------------------------------------------------
+ 2. REQUISITOS DEL WORKFLOW Y DE LAS CLASES
+------------------------------------------------------------------------------
+
+  Trigger ..................... ✔ Schedule diario 7:00, Manual y Webhook
+  HTTP Request (mín. 2) ....... ✔ JSON Server + API de Hacienda + api.qrserver.com
+  IF / Filter ................. ✔ 3 IF y 1 Switch
+  Code ........................ ✔ 3 nodos Code que usan las clases de src/
+  Resultado verificable ....... ✔ Pago actualizado, comprobante QR, bitácora y correo
+  Situaciones de error (mín. 2) ✔ 6 casos (E1 a E6), probados en n8n
+  Clases (mín. 2) ............. ✔ 9 clases, con herencia y polimorfismo
+  main.js independiente ....... ✔ node main.js (sin n8n)
+  Misma lógica clases / Code .. ✔ scripts/build-workflow.js copia src/ a los nodos Code
+  Reglas de negocio (mín. 5) .. ✔ 9 reglas (R1 a R9)
+
+
+------------------------------------------------------------------------------
+ 3. EXTENSIÓN (opcional: "elige uno o varios retos")
+------------------------------------------------------------------------------
+
+  Reto 1 · Herencia y polimorfismo ...... ✔ ReglaNegocio → ReglaRetencion /
+                                             ReglaRevisionManual → 6 reglas
+  Reto 2 · Segunda API + Merge .......... — no realizado
+  Reto 3 · Correo automático ............ ✔ Resumen a tesorería por Gmail
+  Reto 4 · Historial y tendencia ........ ✔ Clase HistorialTendencia
+
+  Extra: panel web (public/index.html) para registrar pagos y proveedores,
+  consultar cédulas, revisar pagos y ver comprobantes. Se aclara en el README
+  y en el documento que es un agregado, porque el laboratorio pide "sin
+  interfaz visual".
+
+
+------------------------------------------------------------------------------
+ 4. QUÉ SUBIR A CLASSROOM
+------------------------------------------------------------------------------
+
+  1. Adjuntar el archivo:  docs\documento-logica-negocio.pdf
+  2. Agregar el enlace del repositorio (después de hacerlo visible al profesor).
+  3. Pegar este comentario (puede ajustarlo con sus palabras):
+
+  ----------------------------------------------------------------------------
+  Profesor, adjunto el Laboratorio #1 (escenario 4: Panel de riesgo de
+  proveedores con comprobante QR).
+
+  Repositorio:
+  https://github.com/victorgonzalez246/Panel-de-riesgo-de-proveedores-con-comprobante-QR
+
+  - Workflow exportado: n8n/workflow-panel-riesgo.json
+  - Clases en JavaScript (POO): carpeta src/ y main.js
+  - Documento de lógica de negocio: adjunto en PDF (también en docs/)
+  - Extensión: retos 1 (herencia y polimorfismo), 3 (correo automático) y
+    4 (historial y tendencia).
+
+  Las instrucciones para ejecutarlo están en el README del repositorio.
+  ----------------------------------------------------------------------------
+
+
+------------------------------------------------------------------------------
+ 5. CÓMO SE EJECUTA (resumen del README)
+------------------------------------------------------------------------------
+
+  npm install
+  npm test                 → 35 pruebas
+  node main.js             → clases sin n8n
+  npm run api:limpio       → JSON Server en http://127.0.0.1:3000 (y el panel)
+  En n8n: Import from File → n8n/workflow-panel-riesgo.json → Execute workflow
