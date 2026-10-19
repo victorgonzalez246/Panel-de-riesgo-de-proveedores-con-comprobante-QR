@@ -1,0 +1,19 @@
+{
+  "name": "panel-riesgo-proveedores-qr",
+  "version": "1.0.0",
+  "description": "Panel de riesgo de proveedores con comprobante QR — Laboratorio #1 POO + n8n",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "api": "json-server db.json --host 127.0.0.1 --port 3000",
+    "api:limpio": "node scripts/reset-db.js && json-server db.json --host 127.0.0.1 --port 3000",
+    "reset": "node scripts/reset-db.js",
+    "demo": "node main.js",
+    "demo:en-vivo": "node main.js --en-vivo",
+    "test": "node --test \"tests/*.test.js\"",
+    "build:workflow": "node scripts/build-workflow.js"
+  },
+  "devDependencies": {
+    "json-server": "0.17.4"
+  }
+}

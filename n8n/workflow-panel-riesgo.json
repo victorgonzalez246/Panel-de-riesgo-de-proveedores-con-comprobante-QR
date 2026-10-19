@@ -1,0 +1,725 @@
+{
+  "id": "PanelRiesgoQR001",
+  "name": "Panel de riesgo de proveedores con comprobante QR",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Panel de riesgo de proveedores\nLos nodos **Code (POO)** usan las clases de `src/` (Proveedor, Pago, ComprobanteQR, EvaluadorRiesgo).\n\n**R1** moroso → retenido · **R2** omiso → retenido · **R3** no inscrito → retenido\n**R4** monto > umbral → revisión manual · **R5** solo pendientes · **R6** cédula inválida → retenido\n**R7** proveedor inactivo → retenido · **R8** vencido → prioridad alta · **R9** 3 intentos → revisión\n\n**E1** Hacienda 404 · **E2** Hacienda caída · **E3** proveedor inexistente · **E4** datos incompletos\n**E5** QR no disponible · **E6** JSON Server caído\n\nDemo de error: cambiar `haciendaUrl` en **Configuración** por `https://hacienda-caida.invalid`",
+        "height": 300,
+        "width": 760,
+        "color": 4
+      },
+      "id": "cd15194e-9ccf-b4ce-aa18-b15b5b68fa26",
+      "name": "Nota: reglas de negocio",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        -420
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "9dbadd39-0aab-29a3-d9f9-f240364ad0d1",
+      "name": "Ejecutar manualmente",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      },
+      "id": "98d495d1-a613-66e1-831a-60bedbe02b5e",
+      "name": "Revisión diaria 7:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "de4649b1-434a-dd62-6fd6-8deaa1709d53",
+              "name": "jsonServerUrl",
+              "value": "http://127.0.0.1:3000",
+              "type": "string"
+            },
+            {
+              "id": "26e0533d-782a-e0f6-4606-af7f88c44ce4",
+              "name": "haciendaUrl",
+              "value": "https://api.hacienda.go.cr/fe/ae",
+              "type": "string"
+            },
+            {
+              "id": "d0bb3309-caf1-dd80-09c7-3120f32d9166",
+              "name": "qrServerUrl",
+              "value": "https://api.qrserver.com/v1/create-qr-code/",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1a015011-7e80-7caf-279c-de8bdf66f406",
+      "name": "Configuración",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Configuración').first().json.jsonServerUrl }}/pagos?estado=pendiente&estado=error_verificacion",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          },
+          "timeout": 10000
+        }
+      },
+      "id": "838f8489-fa44-4b20-bae9-066b6dade10a",
+      "name": "Obtener pagos por revisar",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        100
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "errorMessage": "=[E6] JSON Server no responde en {{ $('Configuración').first().json.jsonServerUrl }}. Inicie el servidor con \"npm run api\" y vuelva a ejecutar."
+      },
+      "id": "f335e6fe-a0cd-e589-9cb3-e86c0cf5b39a",
+      "name": "JSON Server no disponible",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        660,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ddee5957-0ebb-d235-bf78-656fab041e96",
+              "leftValue": "={{ $json.body }}",
+              "rightValue": "",
+              "operator": {
+                "type": "array",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "8a1af3d4-6b35-5956-0dba-402b772ec85e",
+      "name": "¿Hay pagos por revisar?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "5b5c1272-45a9-2275-c5bd-4dba9853c8c3",
+      "name": "Sin pagos por revisar",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        880,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "body",
+        "options": {}
+      },
+      "id": "663161c8-27c4-58f0-26d8-17910f261e39",
+      "name": "Separar pagos",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        880,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Configuración').first().json.jsonServerUrl }}/proveedores/{{ encodeURIComponent($json.proveedorId || 'sin-proveedor') }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 10000
+        }
+      },
+      "id": "d92b3238-1251-ca4d-d4ed-71f01297dd22",
+      "name": "Obtener proveedor",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        -100
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Clases copiadas desde src/ por scripts/build-workflow.js — no editar aquí.\n// ---------- src/config.js ----------\n// Parámetros de negocio compartidos por todas las clases.\n// Si se cambia un umbral aquí, cambia también en el nodo Code del workflow\n// (scripts/build-workflow.js copia este archivo dentro de los nodos Code).\n\nconst REGLAS = {\n  // R4: montos que exigen aprobación manual aunque el proveedor esté al día\n  umbralRevisionManual: { CRC: 5000000, USD: 10000 },\n  monedasPermitidas: ['CRC', 'USD'],\n  // R5: solo estos estados entran a la revisión automática\n  estadosProcesables: ['pendiente', 'error_verificacion'],\n  // R9: intentos de verificación antes de enviar el pago a revisión manual\n  maxIntentosVerificacion: 3,\n  // R3: situaciones de inscripción que Hacienda considera válidas\n  estadosHaciendaValidos: ['Inscrito', 'Inscrito de oficio'],\n  zonaHoraria: 'America/Costa_Rica'\n};\n\nconst ESTADOS = {\n  PENDIENTE: 'pendiente',\n  APROBADO: 'aprobado',\n  RETENIDO: 'retenido',\n  REVISION_MANUAL: 'revision_manual',\n  ERROR_VERIFICACION: 'error_verificacion'\n};\n\n// Fecha local de Costa Rica en formato AAAA-MM-DD\nfunction fechaLocal(fecha) {\n  return fecha.toLocaleDateString('en-CA', { timeZone: REGLAS.zonaHoraria });\n}\n\n// ---------- src/Proveedor.js ----------\n// Longitudes válidas de identificación según el tipo que usa Hacienda:\n// 01 física, 02 jurídica, 03 DIMEX, 04 NITE\nconst LONGITUD_POR_TIPO = { '01': [9], '02': [10], '03': [11, 12], '04': [10] };\n\nclass Proveedor {\n  constructor({ id, nombre, cedula, tipoCedula, email, activo = true } = {}) {\n    this.id = id;\n    this.nombre = nombre;\n    this.cedula = cedula == null ? '' : String(cedula).trim();\n    this.tipoCedula = tipoCedula;\n    this.email = email;\n    this.activo = activo !== false;\n    this.situacion = null; // se completa con la respuesta de Hacienda\n  }\n\n  // R7: la empresa solo le paga a proveedores activos en su registro\n  estaActivo() {\n    return this.activo;\n  }\n\n  // R6: la cédula debe tener solo dígitos y la longitud de su tipo\n  validarCedula() {\n    if (!/^\\d+$/.test(this.cedula)) return false;\n    const longitudes = LONGITUD_POR_TIPO[this.tipoCedula] || [9, 10, 11, 12];\n    return longitudes.includes(this.cedula.length);\n  }\n\n  registrarSituacionHacienda(datosHacienda) {\n    const situacion = (datosHacienda && datosHacienda.situacion) || {};\n    this.situacion = {\n      moroso: situacion.moroso,\n      omiso: situacion.omiso,\n      estado: situacion.estado,\n      nombreHacienda: datosHacienda ? datosHacienda.nombre : undefined\n    };\n  }\n\n  // R1\n  estaMoroso() {\n    return this.situacion !== null && this.situacion.moroso === 'SI';\n  }\n\n  // R2\n  estaOmiso() {\n    return this.situacion !== null && this.situacion.omiso === 'SI';\n  }\n\n  // R3\n  estaInscrito() {\n    return this.situacion !== null && REGLAS.estadosHaciendaValidos.includes(this.situacion.estado);\n  }\n\n  // Junta R1, R2 y R3: lista vacía significa que el proveedor está al día\n  impedimentosTributarios() {\n    const impedimentos = [];\n    if (this.estaMoroso()) impedimentos.push('[R1] Proveedor moroso ante Hacienda');\n    if (this.estaOmiso()) impedimentos.push('[R2] Proveedor omiso (declaraciones pendientes)');\n    if (!this.estaInscrito()) {\n      impedimentos.push(`[R3] Situación en Hacienda no válida: \"${this.situacion ? this.situacion.estado : 'desconocida'}\"`);\n    }\n    return impedimentos;\n  }\n}\n\n// ---------- src/Pago.js ----------\nclass Pago {\n  constructor({ id, proveedorId, monto, moneda, concepto, fechaVencimiento, estado, intentosVerificacion = 0 } = {}) {\n    this.id = id;\n    this.proveedorId = proveedorId;\n    this.monto = monto;\n    this.moneda = moneda;\n    this.concepto = concepto;\n    this.fechaVencimiento = fechaVencimiento;\n    this.estado = estado;\n    this.intentosVerificacion = Number(intentosVerificacion) || 0;\n  }\n\n  // R5: solo los pagos pendientes (o con verificación fallida) se revisan\n  esProcesable() {\n    return REGLAS.estadosProcesables.includes(this.estado);\n  }\n\n  // E4: datos mínimos para poder evaluar el pago\n  camposFaltantes() {\n    const faltantes = [];\n    if (!this.proveedorId) faltantes.push('proveedorId');\n    if (typeof this.monto !== 'number' || !Number.isFinite(this.monto) || this.monto <= 0) faltantes.push('monto');\n    if (!REGLAS.monedasPermitidas.includes(this.moneda)) faltantes.push('moneda');\n    if (!this.concepto) faltantes.push('concepto');\n    if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(this.fechaVencimiento || '')) faltantes.push('fechaVencimiento');\n    return faltantes;\n  }\n\n  // R4: pagos grandes siempre los aprueba una persona\n  requiereAprobacionManual() {\n    const umbral = REGLAS.umbralRevisionManual[this.moneda];\n    return umbral !== undefined && this.monto > umbral;\n  }\n\n  // R8: un pago vencido se atiende con prioridad alta\n  estaVencido(hoy = new Date()) {\n    return this.fechaVencimiento < fechaLocal(hoy);\n  }\n\n  prioridad(hoy = new Date()) {\n    return this.estaVencido(hoy) ? 'alta' : 'normal';\n  }\n\n  // R9: el intento actual es el último permitido\n  agotoIntentos() {\n    return this.intentosVerificacion + 1 >= REGLAS.maxIntentosVerificacion;\n  }\n\n  montoFormateado() {\n    return Pago.formatearMonto(this.monto, this.moneda);\n  }\n\n  static formatearMonto(monto, moneda) {\n    const simbolo = moneda === 'USD' ? '$' : '₡';\n    const [entero, decimales] = Number(monto).toFixed(2).split('.');\n    return `${simbolo}${entero.replace(/\\B(?=(\\d{3})+(?!\\d))/g, '.')},${decimales}`;\n  }\n\n  // Transiciones de estado: cada una devuelve los cambios que se guardan en JSON Server\n\n  aprobar(qrUrl, codigoComprobante, hoy = new Date()) {\n    return this.#cambiarEstado(ESTADOS.APROBADO, '[OK] Proveedor al día con Hacienda; pago aprobado', hoy, {\n      qrUrl,\n      comprobante: codigoComprobante\n    });\n  }\n\n  retener(motivo, hoy = new Date()) {\n    return this.#cambiarEstado(ESTADOS.RETENIDO, motivo, hoy);\n  }\n\n  enviarARevision(motivo, hoy = new Date()) {\n    return this.#cambiarEstado(ESTADOS.REVISION_MANUAL, motivo, hoy);\n  }\n\n  // Falla temporal: se reintenta en la próxima ejecución hasta agotar los intentos (R9)\n  registrarFallaVerificacion(motivo, hoy = new Date()) {\n    const intentos = this.intentosVerificacion + 1;\n    if (this.agotoIntentos()) {\n      return this.#cambiarEstado(\n        ESTADOS.REVISION_MANUAL,\n        `[R9] Se agotaron ${REGLAS.maxIntentosVerificacion} intentos de verificación. Último error: ${motivo}`,\n        hoy,\n        { intentosVerificacion: intentos }\n      );\n    }\n    return this.#cambiarEstado(\n      ESTADOS.ERROR_VERIFICACION,\n      `${motivo} (intento ${intentos} de ${REGLAS.maxIntentosVerificacion}; se reintentará en la próxima revisión)`,\n      hoy,\n      { intentosVerificacion: intentos }\n    );\n  }\n\n  #cambiarEstado(estado, motivo, hoy, extra = {}) {\n    this.estado = estado;\n    return {\n      estado,\n      motivo,\n      prioridad: this.prioridad(hoy),\n      fechaRevision: hoy.toISOString(),\n      ...extra\n    };\n  }\n}\n\n// ---------- src/ComprobanteQR.js ----------\nconst QR_BASE_URL = 'https://api.qrserver.com/v1/create-qr-code/';\n\n// Comprobante visual de un pago aprobado: el QR contiene los datos del pago\nclass ComprobanteQR {\n  constructor(pago, proveedor, { fecha = new Date(), baseUrl = QR_BASE_URL, tamano = 250 } = {}) {\n    this.pago = pago;\n    this.proveedor = proveedor;\n    this.fecha = fecha;\n    this.baseUrl = baseUrl;\n    this.tamano = tamano;\n  }\n\n  codigo() {\n    return `CMP-${this.pago.id}-${fechaLocal(this.fecha).replace(/-/g, '')}`;\n  }\n\n  contenido() {\n    return [\n      'COMPROBANTE DE PAGO APROBADO',\n      `Comprobante: ${this.codigo()}`,\n      `Pago: ${this.pago.id}`,\n      `Proveedor: ${this.proveedor.nombre}`,\n      `Cedula: ${this.proveedor.cedula}`,\n      `Monto: ${this.pago.montoFormateado()}`,\n      `Concepto: ${this.pago.concepto}`,\n      `Verificado en Hacienda: ${fechaLocal(this.fecha)}`\n    ].join('\\n');\n  }\n\n  url() {\n    return `${this.baseUrl}?size=${this.tamano}x${this.tamano}&data=${encodeURIComponent(this.contenido())}`;\n  }\n}\n\n// ---------- src/EvaluadorRiesgo.js ----------\n// Clasifica una respuesta HTTP. Acepta la forma que entrega n8n con \"Full Response\"\n// ({ statusCode, body }) o el error que deja \"Continue On Fail\" ({ error }).\nfunction clasificarRespuesta(respuesta) {\n  if (!respuesta) return { tipo: 'caida', detalle: 'sin respuesta' };\n  if (respuesta.error) {\n    const detalle = respuesta.error.message || respuesta.error.description || String(respuesta.error);\n    return { tipo: 'caida', detalle };\n  }\n  const codigo = Number(respuesta.statusCode);\n  if (codigo === 200) return { tipo: 'ok', body: respuesta.body };\n  if (codigo === 404) return { tipo: 'no_encontrado', codigo };\n  if (codigo === 429 || codigo >= 500) return { tipo: 'caida', detalle: `código HTTP ${codigo}` };\n  return { tipo: 'inesperada', detalle: `código HTTP ${codigo}` };\n}\n\n// Decide qué pasa con cada pago. Trabaja en dos pasos, igual que el workflow:\n//   1. validar(): reglas que no necesitan a Hacienda (antes del HTTP a Hacienda)\n//   2. evaluar(): reglas con la situación tributaria (después del HTTP a Hacienda)\nclass EvaluadorRiesgo {\n  constructor({ hoy = new Date(), qrBaseUrl = QR_BASE_URL } = {}) {\n    this.hoy = hoy;\n    this.qrBaseUrl = qrBaseUrl;\n  }\n\n  // Paso 1. respuestaProveedor = respuesta de GET /proveedores/:id en JSON Server\n  validar(datosPago, respuestaProveedor) {\n    const pago = new Pago(datosPago);\n\n    if (!pago.esProcesable()) {\n      return this.#resultado(pago, null, 'omitido', null, `[R5] El pago está en estado \"${pago.estado}\" y no se reevalúa`);\n    }\n\n    const faltantes = pago.camposFaltantes();\n    if (faltantes.length > 0) {\n      const cambios = pago.enviarARevision(`[E4] Datos incompletos del pago: falta ${faltantes.join(', ')}`, this.hoy);\n      return this.#resultado(pago, null, cambios.estado, cambios);\n    }\n\n    const consulta = clasificarRespuesta(respuestaProveedor);\n    if (consulta.tipo === 'no_encontrado' || (consulta.tipo === 'ok' && !consulta.body)) {\n      const cambios = pago.enviarARevision(`[E3] El proveedor ${pago.proveedorId} no existe en el registro de la empresa`, this.hoy);\n      return this.#resultado(pago, null, cambios.estado, cambios);\n    }\n    if (consulta.tipo !== 'ok') {\n      const cambios = pago.registrarFallaVerificacion(`[E2] No se pudo consultar el proveedor en JSON Server (${consulta.detalle})`, this.hoy);\n      return this.#resultado(pago, null, cambios.estado, cambios);\n    }\n\n    const datosProveedor = consulta.body;\n    const proveedor = new Proveedor(datosProveedor);\n\n    if (!proveedor.estaActivo()) {\n      const cambios = pago.retener(`[R7] El proveedor ${proveedor.nombre} está inactivo en el registro de la empresa`, this.hoy);\n      return this.#resultado(pago, datosProveedor, cambios.estado, cambios);\n    }\n    if (!proveedor.validarCedula()) {\n      const cambios = pago.retener(`[R6] La cédula \"${proveedor.cedula}\" no tiene un formato válido; no se consultó a Hacienda`, this.hoy);\n      return this.#resultado(pago, datosProveedor, cambios.estado, cambios);\n    }\n\n    const resultado = this.#resultado(pago, datosProveedor, 'consultar_hacienda', null, 'Datos completos; falta verificar en Hacienda');\n    resultado.consultarHacienda = true;\n    resultado.cedula = proveedor.cedula;\n    return resultado;\n  }\n\n  // Paso 2. respuestaHacienda = respuesta de GET api.hacienda.go.cr/fe/ae\n  evaluar(datosPago, datosProveedor, respuestaHacienda) {\n    const pago = new Pago(datosPago);\n    const proveedor = new Proveedor(datosProveedor);\n    const consulta = clasificarRespuesta(respuestaHacienda);\n\n    if (consulta.tipo === 'no_encontrado') {\n      const cambios = pago.retener(`[E1] La cédula ${proveedor.cedula} no está registrada en Hacienda`, this.hoy);\n      return this.#resultado(pago, datosProveedor, cambios.estado, cambios);\n    }\n    if (consulta.tipo !== 'ok') {\n      const cambios = pago.registrarFallaVerificacion(`[E2] Hacienda no respondió correctamente (${consulta.detalle})`, this.hoy);\n      return this.#resultado(pago, datosProveedor, cambios.estado, cambios);\n    }\n    if (!consulta.body || !consulta.body.situacion) {\n      const cambios = pago.registrarFallaVerificacion('[E2] Hacienda respondió sin la situación tributaria del proveedor', this.hoy);\n      return this.#resultado(pago, datosProveedor, cambios.estado, cambios);\n    }\n\n    proveedor.registrarSituacionHacienda(consulta.body);\n    const impedimentos = proveedor.impedimentosTributarios();\n    if (impedimentos.length > 0) {\n      const cambios = pago.retener(impedimentos.join('; '), this.hoy);\n      return this.#resultado(pago, datosProveedor, cambios.estado, cambios, null, proveedor.situacion);\n    }\n\n    if (pago.requiereAprobacionManual()) {\n      const cambios = pago.enviarARevision(\n        `[R4] Proveedor al día, pero el monto ${pago.montoFormateado()} supera el umbral de aprobación automática`,\n        this.hoy\n      );\n      return this.#resultado(pago, datosProveedor, cambios.estado, cambios, null, proveedor.situacion);\n    }\n\n    const comprobante = new ComprobanteQR(pago, proveedor, { fecha: this.hoy, baseUrl: this.qrBaseUrl });\n    const cambios = pago.aprobar(comprobante.url(), comprobante.codigo(), this.hoy);\n    return this.#resultado(pago, datosProveedor, cambios.estado, cambios, null, proveedor.situacion);\n  }\n\n  // Forma única de salida: es lo que recibe el Switch \"¿Decisión?\" del workflow\n  #resultado(pago, datosProveedor, decision, cambios, resumen = null, situacionHacienda = null) {\n    return {\n      pagoId: pago.id,\n      decision,\n      consultarHacienda: false,\n      cedula: null,\n      resumen: resumen || (cambios ? cambios.motivo : ''),\n      cambios,\n      situacionHacienda,\n      pago: { ...pago },\n      proveedor: datosProveedor\n    };\n  }\n}\n\n// ---------- Lógica del nodo ----------\n// Paso 1: reglas R5, E4, E3, R7 y R6 (no necesitan a Hacienda)\nconst evaluador = new EvaluadorRiesgo();\nconst pago = $('Separar pagos').item.json;\nreturn { json: evaluador.validar(pago, $json) };"
+      },
+      "id": "c33d0094-a21f-fd99-ba5e-53670481054d",
+      "name": "Validar pago y proveedor (POO)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "9407d57d-c52a-a6ba-b02c-49bf2a03ae65",
+              "leftValue": "={{ $json.consultarHacienda }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "9fb5ec7b-e419-0f64-e7c6-ee69f4f79129",
+      "name": "¿Consultar Hacienda?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1540,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Configuración').first().json.haciendaUrl }}?identificacion={{ $json.cedula }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 10000,
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 1500
+            }
+          }
+        }
+      },
+      "id": "60225595-05ac-f8e5-c081-0fd0e34d8900",
+      "name": "Consultar Hacienda",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1760,
+        -200
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Clases copiadas desde src/ por scripts/build-workflow.js — no editar aquí.\n// ---------- src/config.js ----------\n// Parámetros de negocio compartidos por todas las clases.\n// Si se cambia un umbral aquí, cambia también en el nodo Code del workflow\n// (scripts/build-workflow.js copia este archivo dentro de los nodos Code).\n\nconst REGLAS = {\n  // R4: montos que exigen aprobación manual aunque el proveedor esté al día\n  umbralRevisionManual: { CRC: 5000000, USD: 10000 },\n  monedasPermitidas: ['CRC', 'USD'],\n  // R5: solo estos estados entran a la revisión automática\n  estadosProcesables: ['pendiente', 'error_verificacion'],\n  // R9: intentos de verificación antes de enviar el pago a revisión manual\n  maxIntentosVerificacion: 3,\n  // R3: situaciones de inscripción que Hacienda considera válidas\n  estadosHaciendaValidos: ['Inscrito', 'Inscrito de oficio'],\n  zonaHoraria: 'America/Costa_Rica'\n};\n\nconst ESTADOS = {\n  PENDIENTE: 'pendiente',\n  APROBADO: 'aprobado',\n  RETENIDO: 'retenido',\n  REVISION_MANUAL: 'revision_manual',\n  ERROR_VERIFICACION: 'error_verificacion'\n};\n\n// Fecha local de Costa Rica en formato AAAA-MM-DD\nfunction fechaLocal(fecha) {\n  return fecha.toLocaleDateString('en-CA', { timeZone: REGLAS.zonaHoraria });\n}\n\n// ---------- src/Proveedor.js ----------\n// Longitudes válidas de identificación según el tipo que usa Hacienda:\n// 01 física, 02 jurídica, 03 DIMEX, 04 NITE\nconst LONGITUD_POR_TIPO = { '01': [9], '02': [10], '03': [11, 12], '04': [10] };\n\nclass Proveedor {\n  constructor({ id, nombre, cedula, tipoCedula, email, activo = true } = {}) {\n    this.id = id;\n    this.nombre = nombre;\n    this.cedula = cedula == null ? '' : String(cedula).trim();\n    this.tipoCedula = tipoCedula;\n    this.email = email;\n    this.activo = activo !== false;\n    this.situacion = null; // se completa con la respuesta de Hacienda\n  }\n\n  // R7: la empresa solo le paga a proveedores activos en su registro\n  estaActivo() {\n    return this.activo;\n  }\n\n  // R6: la cédula debe tener solo dígitos y la longitud de su tipo\n  validarCedula() {\n    if (!/^\\d+$/.test(this.cedula)) return false;\n    const longitudes = LONGITUD_POR_TIPO[this.tipoCedula] || [9, 10, 11, 12];\n    return longitudes.includes(this.cedula.length);\n  }\n\n  registrarSituacionHacienda(datosHacienda) {\n    const situacion = (datosHacienda && datosHacienda.situacion) || {};\n    this.situacion = {\n      moroso: situacion.moroso,\n      omiso: situacion.omiso,\n      estado: situacion.estado,\n      nombreHacienda: datosHacienda ? datosHacienda.nombre : undefined\n    };\n  }\n\n  // R1\n  estaMoroso() {\n    return this.situacion !== null && this.situacion.moroso === 'SI';\n  }\n\n  // R2\n  estaOmiso() {\n    return this.situacion !== null && this.situacion.omiso === 'SI';\n  }\n\n  // R3\n  estaInscrito() {\n    return this.situacion !== null && REGLAS.estadosHaciendaValidos.includes(this.situacion.estado);\n  }\n\n  // Junta R1, R2 y R3: lista vacía significa que el proveedor está al día\n  impedimentosTributarios() {\n    const impedimentos = [];\n    if (this.estaMoroso()) impedimentos.push('[R1] Proveedor moroso ante Hacienda');\n    if (this.estaOmiso()) impedimentos.push('[R2] Proveedor omiso (declaraciones pendientes)');\n    if (!this.estaInscrito()) {\n      impedimentos.push(`[R3] Situación en Hacienda no válida: \"${this.situacion ? this.situacion.estado : 'desconocida'}\"`);\n    }\n    return impedimentos;\n  }\n}\n\n// ---------- src/Pago.js ----------\nclass Pago {\n  constructor({ id, proveedorId, monto, moneda, concepto, fechaVencimiento, estado, intentosVerificacion = 0 } = {}) {\n    this.id = id;\n    this.proveedorId = proveedorId;\n    this.monto = monto;\n    this.moneda = moneda;\n    this.concepto = concepto;\n    this.fechaVencimiento = fechaVencimiento;\n    this.estado = estado;\n    this.intentosVerificacion = Number(intentosVerificacion) || 0;\n  }\n\n  // R5: solo los pagos pendientes (o con verificación fallida) se revisan\n  esProcesable() {\n    return REGLAS.estadosProcesables.includes(this.estado);\n  }\n\n  // E4: datos mínimos para poder evaluar el pago\n  camposFaltantes() {\n    const faltantes = [];\n    if (!this.proveedorId) faltantes.push('proveedorId');\n    if (typeof this.monto !== 'number' || !Number.isFinite(this.monto) || this.monto <= 0) faltantes.push('monto');\n    if (!REGLAS.monedasPermitidas.includes(this.moneda)) faltantes.push('moneda');\n    if (!this.concepto) faltantes.push('concepto');\n    if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(this.fechaVencimiento || '')) faltantes.push('fechaVencimiento');\n    return faltantes;\n  }\n\n  // R4: pagos grandes siempre los aprueba una persona\n  requiereAprobacionManual() {\n    const umbral = REGLAS.umbralRevisionManual[this.moneda];\n    return umbral !== undefined && this.monto > umbral;\n  }\n\n  // R8: un pago vencido se atiende con prioridad alta\n  estaVencido(hoy = new Date()) {\n    return this.fechaVencimiento < fechaLocal(hoy);\n  }\n\n  prioridad(hoy = new Date()) {\n    return this.estaVencido(hoy) ? 'alta' : 'normal';\n  }\n\n  // R9: el intento actual es el último permitido\n  agotoIntentos() {\n    return this.intentosVerificacion + 1 >= REGLAS.maxIntentosVerificacion;\n  }\n\n  montoFormateado() {\n    return Pago.formatearMonto(this.monto, this.moneda);\n  }\n\n  static formatearMonto(monto, moneda) {\n    const simbolo = moneda === 'USD' ? '$' : '₡';\n    const [entero, decimales] = Number(monto).toFixed(2).split('.');\n    return `${simbolo}${entero.replace(/\\B(?=(\\d{3})+(?!\\d))/g, '.')},${decimales}`;\n  }\n\n  // Transiciones de estado: cada una devuelve los cambios que se guardan en JSON Server\n\n  aprobar(qrUrl, codigoComprobante, hoy = new Date()) {\n    return this.#cambiarEstado(ESTADOS.APROBADO, '[OK] Proveedor al día con Hacienda; pago aprobado', hoy, {\n      qrUrl,\n      comprobante: codigoComprobante\n    });\n  }\n\n  retener(motivo, hoy = new Date()) {\n    return this.#cambiarEstado(ESTADOS.RETENIDO, motivo, hoy);\n  }\n\n  enviarARevision(motivo, hoy = new Date()) {\n    return this.#cambiarEstado(ESTADOS.REVISION_MANUAL, motivo, hoy);\n  }\n\n  // Falla temporal: se reintenta en la próxima ejecución hasta agotar los intentos (R9)\n  registrarFallaVerificacion(motivo, hoy = new Date()) {\n    const intentos = this.intentosVerificacion + 1;\n    if (this.agotoIntentos()) {\n      return this.#cambiarEstado(\n        ESTADOS.REVISION_MANUAL,\n        `[R9] Se agotaron ${REGLAS.maxIntentosVerificacion} intentos de verificación. Último error: ${motivo}`,\n        hoy,\n        { intentosVerificacion: intentos }\n      );\n    }\n    return this.#cambiarEstado(\n      ESTADOS.ERROR_VERIFICACION,\n      `${motivo} (intento ${intentos} de ${REGLAS.maxIntentosVerificacion}; se reintentará en la próxima revisión)`,\n      hoy,\n      { intentosVerificacion: intentos }\n    );\n  }\n\n  #cambiarEstado(estado, motivo, hoy, extra = {}) {\n    this.estado = estado;\n    return {\n      estado,\n      motivo,\n      prioridad: this.prioridad(hoy),\n      fechaRevision: hoy.toISOString(),\n      ...extra\n    };\n  }\n}\n\n// ---------- src/ComprobanteQR.js ----------\nconst QR_BASE_URL = 'https://api.qrserver.com/v1/create-qr-code/';\n\n// Comprobante visual de un pago aprobado: el QR contiene los datos del pago\nclass ComprobanteQR {\n  constructor(pago, proveedor, { fecha = new Date(), baseUrl = QR_BASE_URL, tamano = 250 } = {}) {\n    this.pago = pago;\n    this.proveedor = proveedor;\n    this.fecha = fecha;\n    this.baseUrl = baseUrl;\n    this.tamano = tamano;\n  }\n\n  codigo() {\n    return `CMP-${this.pago.id}-${fechaLocal(this.fecha).replace(/-/g, '')}`;\n  }\n\n  contenido() {\n    return [\n      'COMPROBANTE DE PAGO APROBADO',\n      `Comprobante: ${this.codigo()}`,\n      `Pago: ${this.pago.id}`,\n      `Proveedor: ${this.proveedor.nombre}`,\n      `Cedula: ${this.proveedor.cedula}`,\n      `Monto: ${this.pago.montoFormateado()}`,\n      `Concepto: ${this.pago.concepto}`,\n      `Verificado en Hacienda: ${fechaLocal(this.fecha)}`\n    ].join('\\n');\n  }\n\n  url() {\n    return `${this.baseUrl}?size=${this.tamano}x${this.tamano}&data=${encodeURIComponent(this.contenido())}`;\n  }\n}\n\n// ---------- src/EvaluadorRiesgo.js ----------\n// Clasifica una respuesta HTTP. Acepta la forma que entrega n8n con \"Full Response\"\n// ({ statusCode, body }) o el error que deja \"Continue On Fail\" ({ error }).\nfunction clasificarRespuesta(respuesta) {\n  if (!respuesta) return { tipo: 'caida', detalle: 'sin respuesta' };\n  if (respuesta.error) {\n    const detalle = respuesta.error.message || respuesta.error.description || String(respuesta.error);\n    return { tipo: 'caida', detalle };\n  }\n  const codigo = Number(respuesta.statusCode);\n  if (codigo === 200) return { tipo: 'ok', body: respuesta.body };\n  if (codigo === 404) return { tipo: 'no_encontrado', codigo };\n  if (codigo === 429 || codigo >= 500) return { tipo: 'caida', detalle: `código HTTP ${codigo}` };\n  return { tipo: 'inesperada', detalle: `código HTTP ${codigo}` };\n}\n\n// Decide qué pasa con cada pago. Trabaja en dos pasos, igual que el workflow:\n//   1. validar(): reglas que no necesitan a Hacienda (antes del HTTP a Hacienda)\n//   2. evaluar(): reglas con la situación tributaria (después del HTTP a Hacienda)\nclass EvaluadorRiesgo {\n  constructor({ hoy = new Date(), qrBaseUrl = QR_BASE_URL } = {}) {\n    this.hoy = hoy;\n    this.qrBaseUrl = qrBaseUrl;\n  }\n\n  // Paso 1. respuestaProveedor = respuesta de GET /proveedores/:id en JSON Server\n  validar(datosPago, respuestaProveedor) {\n    const pago = new Pago(datosPago);\n\n    if (!pago.esProcesable()) {\n      return this.#resultado(pago, null, 'omitido', null, `[R5] El pago está en estado \"${pago.estado}\" y no se reevalúa`);\n    }\n\n    const faltantes = pago.camposFaltantes();\n    if (faltantes.length > 0) {\n      const cambios = pago.enviarARevision(`[E4] Datos incompletos del pago: falta ${faltantes.join(', ')}`, this.hoy);\n      return this.#resultado(pago, null, cambios.estado, cambios);\n    }\n\n    const consulta = clasificarRespuesta(respuestaProveedor);\n    if (consulta.tipo === 'no_encontrado' || (consulta.tipo === 'ok' && !consulta.body)) {\n      const cambios = pago.enviarARevision(`[E3] El proveedor ${pago.proveedorId} no existe en el registro de la empresa`, this.hoy);\n      return this.#resultado(pago, null, cambios.estado, cambios);\n    }\n    if (consulta.tipo !== 'ok') {\n      const cambios = pago.registrarFallaVerificacion(`[E2] No se pudo consultar el proveedor en JSON Server (${consulta.detalle})`, this.hoy);\n      return this.#resultado(pago, null, cambios.estado, cambios);\n    }\n\n    const datosProveedor = consulta.body;\n    const proveedor = new Proveedor(datosProveedor);\n\n    if (!proveedor.estaActivo()) {\n      const cambios = pago.retener(`[R7] El proveedor ${proveedor.nombre} está inactivo en el registro de la empresa`, this.hoy);\n      return this.#resultado(pago, datosProveedor, cambios.estado, cambios);\n    }\n    if (!proveedor.validarCedula()) {\n      const cambios = pago.retener(`[R6] La cédula \"${proveedor.cedula}\" no tiene un formato válido; no se consultó a Hacienda`, this.hoy);\n      return this.#resultado(pago, datosProveedor, cambios.estado, cambios);\n    }\n\n    const resultado = this.#resultado(pago, datosProveedor, 'consultar_hacienda', null, 'Datos completos; falta verificar en Hacienda');\n    resultado.consultarHacienda = true;\n    resultado.cedula = proveedor.cedula;\n    return resultado;\n  }\n\n  // Paso 2. respuestaHacienda = respuesta de GET api.hacienda.go.cr/fe/ae\n  evaluar(datosPago, datosProveedor, respuestaHacienda) {\n    const pago = new Pago(datosPago);\n    const proveedor = new Proveedor(datosProveedor);\n    const consulta = clasificarRespuesta(respuestaHacienda);\n\n    if (consulta.tipo === 'no_encontrado') {\n      const cambios = pago.retener(`[E1] La cédula ${proveedor.cedula} no está registrada en Hacienda`, this.hoy);\n      return this.#resultado(pago, datosProveedor, cambios.estado, cambios);\n    }\n    if (consulta.tipo !== 'ok') {\n      const cambios = pago.registrarFallaVerificacion(`[E2] Hacienda no respondió correctamente (${consulta.detalle})`, this.hoy);\n      return this.#resultado(pago, datosProveedor, cambios.estado, cambios);\n    }\n    if (!consulta.body || !consulta.body.situacion) {\n      const cambios = pago.registrarFallaVerificacion('[E2] Hacienda respondió sin la situación tributaria del proveedor', this.hoy);\n      return this.#resultado(pago, datosProveedor, cambios.estado, cambios);\n    }\n\n    proveedor.registrarSituacionHacienda(consulta.body);\n    const impedimentos = proveedor.impedimentosTributarios();\n    if (impedimentos.length > 0) {\n      const cambios = pago.retener(impedimentos.join('; '), this.hoy);\n      return this.#resultado(pago, datosProveedor, cambios.estado, cambios, null, proveedor.situacion);\n    }\n\n    if (pago.requiereAprobacionManual()) {\n      const cambios = pago.enviarARevision(\n        `[R4] Proveedor al día, pero el monto ${pago.montoFormateado()} supera el umbral de aprobación automática`,\n        this.hoy\n      );\n      return this.#resultado(pago, datosProveedor, cambios.estado, cambios, null, proveedor.situacion);\n    }\n\n    const comprobante = new ComprobanteQR(pago, proveedor, { fecha: this.hoy, baseUrl: this.qrBaseUrl });\n    const cambios = pago.aprobar(comprobante.url(), comprobante.codigo(), this.hoy);\n    return this.#resultado(pago, datosProveedor, cambios.estado, cambios, null, proveedor.situacion);\n  }\n\n  // Forma única de salida: es lo que recibe el Switch \"¿Decisión?\" del workflow\n  #resultado(pago, datosProveedor, decision, cambios, resumen = null, situacionHacienda = null) {\n    return {\n      pagoId: pago.id,\n      decision,\n      consultarHacienda: false,\n      cedula: null,\n      resumen: resumen || (cambios ? cambios.motivo : ''),\n      cambios,\n      situacionHacienda,\n      pago: { ...pago },\n      proveedor: datosProveedor\n    };\n  }\n}\n\n// ---------- Lógica del nodo ----------\n// Paso 2: reglas E1, E2, R1, R2, R3, R4, R8, R9 y generación del comprobante QR\nconst evaluador = new EvaluadorRiesgo({ qrBaseUrl: $('Configuración').first().json.qrServerUrl });\nconst previo = $('Validar pago y proveedor (POO)').item.json;\nreturn { json: evaluador.evaluar(previo.pago, previo.proveedor, $json) };"
+      },
+      "id": "dcd4b85c-c713-9363-13bc-df3f2e4f796a",
+      "name": "Evaluar riesgo (POO)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1980,
+        -200
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "378f2573-30f4-a80e-e159-23e6e597be70",
+                    "leftValue": "={{ $json.decision }}",
+                    "rightValue": "aprobado",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Aprobado"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "378f2573-30f4-a80e-e159-23e6e597be70",
+                    "leftValue": "={{ $json.decision }}",
+                    "rightValue": "omitido",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Omitido"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "Retenido / revisión / error"
+        }
+      },
+      "id": "97d980e3-654d-df2b-225f-cff4809e11d0",
+      "name": "¿Decisión?",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        2200,
+        -40
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.cambios.qrUrl }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "id": "62eff55d-900e-fa9d-2856-0279d3141385",
+      "name": "Generar comprobante QR",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2420,
+        -200
+      ],
+      "onError": "continueErrorOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $('Configuración').first().json.jsonServerUrl }}/pagos/{{ $('¿Decisión?').item.json.pagoId }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($('¿Decisión?').item.json.cambios) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 150
+            }
+          }
+        }
+      },
+      "id": "dc2d553e-7d8c-0498-94aa-3ca10c99e8f7",
+      "name": "Registrar pago aprobado",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2640,
+        -260
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ { pagoId: $('¿Decisión?').item.json.pagoId, decision: 'error_verificacion', cambios: { estado: 'error_verificacion', motivo: '[E5] No se pudo generar el comprobante QR; se reintentará en la próxima revisión', prioridad: $('¿Decisión?').item.json.cambios.prioridad, fechaRevision: $now.toISO() } } }}",
+        "options": {}
+      },
+      "id": "f94fee9e-e2df-5202-d864-436746368e46",
+      "name": "QR no disponible",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2640,
+        -60
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "0b96ab58-3e0e-657f-2f95-1019c1757d1d",
+      "name": "Pago omitido",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2420,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $('Configuración').first().json.jsonServerUrl }}/pagos/{{ $json.pagoId }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.cambios) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 150
+            }
+          }
+        }
+      },
+      "id": "1bc1ea8d-d55f-92e6-eafb-332017058efa",
+      "name": "Registrar resultado del pago",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2860,
+        100
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Configuración').first().json.jsonServerUrl }}/bitacora",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ pagoId: $json.id, proveedorId: $json.proveedorId, estado: $json.estado, motivo: $json.motivo, prioridad: $json.prioridad, comprobante: $json.comprobante || null, qrUrl: $json.qrUrl || null, fecha: $now.toISO() }) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 150
+            }
+          }
+        }
+      },
+      "id": "4e0e9171-7275-a70e-c287-9d63d9852693",
+      "name": "Registrar en bitácora",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3080,
+        -80
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
+    }
+  ],
+  "connections": {
+    "Ejecutar manualmente": {
+      "main": [
+        [
+          {
+            "node": "Configuración",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Revisión diaria 7:00": {
+      "main": [
+        [
+          {
+            "node": "Configuración",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Configuración": {
+      "main": [
+        [
+          {
+            "node": "Obtener pagos por revisar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener pagos por revisar": {
+      "main": [
+        [
+          {
+            "node": "¿Hay pagos por revisar?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "JSON Server no disponible",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Hay pagos por revisar?": {
+      "main": [
+        [
+          {
+            "node": "Separar pagos",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Sin pagos por revisar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Separar pagos": {
+      "main": [
+        [
+          {
+            "node": "Obtener proveedor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener proveedor": {
+      "main": [
+        [
+          {
+            "node": "Validar pago y proveedor (POO)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar pago y proveedor (POO)": {
+      "main": [
+        [
+          {
+            "node": "¿Consultar Hacienda?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Consultar Hacienda?": {
+      "main": [
+        [
+          {
+            "node": "Consultar Hacienda",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "¿Decisión?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar Hacienda": {
+      "main": [
+        [
+          {
+            "node": "Evaluar riesgo (POO)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluar riesgo (POO)": {
+      "main": [
+        [
+          {
+            "node": "¿Decisión?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Decisión?": {
+      "main": [
+        [
+          {
+            "node": "Generar comprobante QR",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Pago omitido",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Registrar resultado del pago",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generar comprobante QR": {
+      "main": [
+        [
+          {
+            "node": "Registrar pago aprobado",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "QR no disponible",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "QR no disponible": {
+      "main": [
+        [
+          {
+            "node": "Registrar resultado del pago",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar pago aprobado": {
+      "main": [
+        [
+          {
+            "node": "Registrar en bitácora",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar resultado del pago": {
+      "main": [
+        [
+          {
+            "node": "Registrar en bitácora",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": []
+}

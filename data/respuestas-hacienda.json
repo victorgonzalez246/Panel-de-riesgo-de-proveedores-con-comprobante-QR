@@ -1,0 +1,188 @@
+{
+  "3101000107": {
+    "statusCode": 404,
+    "body": {
+      "code": 404,
+      "status": "Information no available on this system, please try again with new values"
+    }
+  },
+  "3101007749": {
+    "statusCode": 200,
+    "body": {
+      "nombre": "REFINADORA COSTARRICENSE DE PETROLEO SOCIEDAD ANONIMA",
+      "tipoIdentificacion": "02",
+      "regimen": {
+        "codigo": 1,
+        "descripcion": "Régimen general"
+      },
+      "situacion": {
+        "moroso": "NO",
+        "omiso": "NO",
+        "estado": "Inscrito",
+        "administracionTributaria": "Dirección de Grandes Contribuyentes Nacionales"
+      },
+      "actividades": [
+        {
+          "estado": "A",
+          "tipo": "P",
+          "codigo": "4930.0",
+          "descripcion": "Transporte por tuberías"
+        },
+        {
+          "estado": "A",
+          "tipo": "S",
+          "codigo": "4741.0",
+          "descripcion": "Venta al por menor de computadoras, equipo periféricos, programas de información y telecomunicaciones en comercios especializados"
+        },
+        {
+          "estado": "A",
+          "tipo": "S",
+          "codigo": "1920.0",
+          "descripcion": "Fabricación de los productos de la refinación del petróleo"
+        },
+        {
+          "estado": "A",
+          "tipo": "S",
+          "codigo": "7110.0",
+          "descripcion": "Actividades de arquitectura e ingeniería y actividades conexas de consultoría técnica"
+        },
+        {
+          "estado": "A",
+          "tipo": "S",
+          "codigo": "4610.0",
+          "descripcion": "Venta al por mayor a cambio de una retribución o por contrato"
+        },
+        {
+          "estado": "A",
+          "tipo": "S",
+          "codigo": "5210.0",
+          "descripcion": "Almacenamiento y depósito"
+        },
+        {
+          "estado": "A",
+          "tipo": "S",
+          "codigo": "6810.0",
+          "descripcion": "Actividades inmobiliarias con bienes propios o arrendados"
+        }
+      ]
+    }
+  },
+  "4000001021": {
+    "statusCode": 200,
+    "body": {
+      "nombre": "BANCO NACIONAL DE COSTA RICA",
+      "tipoIdentificacion": "02",
+      "regimen": {
+        "codigo": 1,
+        "descripcion": "Régimen general"
+      },
+      "situacion": {
+        "moroso": "NO",
+        "omiso": "NO",
+        "estado": "Inscrito",
+        "administracionTributaria": "Dirección de Grandes Contribuyentes Nacionales"
+      },
+      "actividades": [
+        {
+          "estado": "A",
+          "tipo": "P",
+          "codigo": "6492.0",
+          "descripcion": "Otros tipos de crédito"
+        },
+        {
+          "estado": "A",
+          "tipo": "S",
+          "codigo": "6419.0",
+          "descripcion": "Otros tipos de intermediación monetaria"
+        }
+      ]
+    }
+  },
+  "4000042139": {
+    "statusCode": 200,
+    "body": {
+      "nombre": "INSTITUTO COSTARRICENSE DE ELECTRICIDAD",
+      "tipoIdentificacion": "02",
+      "regimen": {
+        "codigo": 1,
+        "descripcion": "Régimen general"
+      },
+      "situacion": {
+        "moroso": "SI",
+        "omiso": "NO",
+        "estado": "Inscrito",
+        "administracionTributaria": "Dirección de Grandes Contribuyentes Nacionales"
+      },
+      "actividades": [
+        {
+          "estado": "A",
+          "tipo": "P",
+          "codigo": "6110.0",
+          "descripcion": "Actividades de telecomunicaciones alámbricas"
+        },
+        {
+          "estado": "A",
+          "tipo": "S",
+          "codigo": "3510.0",
+          "descripcion": "Generación , transmisión y distribución de energía eléctrica"
+        },
+        {
+          "estado": "A",
+          "tipo": "S",
+          "codigo": "5229.0",
+          "descripcion": "Otras actividades  de apoyo al  transporte"
+        }
+      ]
+    }
+  },
+  "4000042147": {
+    "statusCode": 200,
+    "body": {
+      "nombre": "CAJA COSTARRICENSE DE SEGURO SOCIAL",
+      "tipoIdentificacion": "02",
+      "regimen": {
+        "codigo": 0,
+        "descripcion": "No tiene"
+      },
+      "situacion": {
+        "moroso": "NO",
+        "omiso": "NO",
+        "estado": "Inscrito de oficio",
+        "administracionTributaria": "Dirección de Grandes Contribuyentes Nacionales"
+      },
+      "actividades": [
+        {
+          "codigo": "8430.0",
+          "descripcion": "Actividades de planes de seguridad social de afiliación obligatoria",
+          "estado": "A",
+          "tipo": "P"
+        }
+      ]
+    }
+  },
+  "4000042149": {
+    "statusCode": 200,
+    "body": {
+      "nombre": "UNIVERSIDAD DE COSTA RICA",
+      "tipoIdentificacion": "02",
+      "regimen": {
+        "codigo": 1,
+        "descripcion": "Régimen general"
+      },
+      "situacion": {
+        "moroso": "NO",
+        "omiso": "NO",
+        "estado": "Inscrito",
+        "administracionTributaria": "Dirección de Grandes Contribuyentes Nacionales"
+      },
+      "actividades": [
+        {
+          "estado": "A",
+          "tipo": "P",
+          "codigo": "8530.1",
+          "descripcion": "Enseñanza universitaria "
+        }
+      ]
+    }
+  }
+}
