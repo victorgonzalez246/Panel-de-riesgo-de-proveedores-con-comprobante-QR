@@ -97,7 +97,9 @@ classDiagram
 │   └── ResumenRevision.js   correo de resumen para tesorería (extensión, reto 3)
 ├── main.js                  prueba las clases por consola sin n8n
 ├── tests/                   30 pruebas automatizadas (reglas, errores, diagnóstico, POO y correo)
-├── public/index.html        panel web (extra opcional), lo sirve JSON Server
+├── public/                  panel web (extra opcional), lo sirve JSON Server
+│   ├── index.html
+│   └── clases.js            copia de src/ generada para validar los formularios
 ├── db.json                  base de datos de JSON Server (local, no se sube a Git)
 ├── data/
 │   ├── db.inicial.json      datos de prueba originales (para reiniciar)
@@ -138,11 +140,13 @@ Si se cambia una clase de `src/`, regenerar los workflows con `npm run build:wor
 
 > El laboratorio pide una solución "sin interfaz visual". El panel es un **agregado**: no reemplaza ni modifica el workflow principal, y usa las mismas clases.
 
-Panel en **http://127.0.0.1:3000** (lo sirve JSON Server desde `public/`). Está pensado para alguien que nunca lo ha usado: un menú lateral lleva paso a paso por las cuatro tareas, cada resultado se explica en lenguaje sencillo con **qué hacer ahora**, y la sección *Ayuda* explica cada estado.
+Panel en **http://127.0.0.1:3000** (lo sirve JSON Server desde `public/`). Los datos no están fijos en el código: pagos y proveedores se registran desde el panel, y los formularios validan con las mismas clases de `src/`, que `npm run build:workflow` copia a `public/clases.js`. Los íconos son Material Symbols de Google Fonts. Está pensado para alguien que nunca lo ha usado: un menú lateral lleva paso a paso por las cuatro tareas, cada resultado se explica en lenguaje sencillo con **qué hacer ahora**, y la sección *Ayuda* explica cada estado.
 
 | Opción del menú | Qué permite |
 |---|---|
 | **Inicio** | Guía de los 4 pasos con el estado de cada uno (consultas de hoy, pagos por revisar, comprobantes, último correo). |
+| **Registrar pago** | Formulario para anotar un pago nuevo (proveedor de una lista, monto, moneda, concepto, fecha de vencimiento con calendario). Se guarda en JSON Server como *pendiente*. Valida con `Pago.camposFaltantes()` y avisa con `requiereAprobacionManual()` si el monto irá a un supervisor. |
+| **Proveedores** | Lista de proveedores, alta de uno nuevo (valida la cédula con `Proveedor.validarCedula()` y evita repetidos), activar o desactivar (R7) y consultar en Hacienda con un clic. |
 | **1. Consultar proveedor** | Escribir una cédula (acepta guiones) y saber si se le puede pagar, por qué y qué hacer; historial con hora de Costa Rica y filtro *Se puede pagar / No pagar*. |
 | **2. Revisar pagos** | Botón que lanza el workflow principal (`POST /webhook/revision-pagos`) y muestra el avance por etapas; tabla de pagos con filtros y una columna *Qué hacer*. |
 | **3. Comprobantes** | Los QR de los pagos aprobados, para escanear, abrir o descargar. |
@@ -151,6 +155,10 @@ Panel en **http://127.0.0.1:3000** (lo sirve JSON Server desde `public/`). Está
 ![Panel: inicio](docs/img/panel-inicio.png)
 
 ![Panel: consulta de cédulas e historial](docs/img/panel-consultas.png)
+
+![Panel: registrar un pago](docs/img/panel-registro-pago.png)
+
+![Panel: proveedores](docs/img/panel-registro-proveedores.png)
 
 ![Panel: revisión de pagos](docs/img/panel-revision.png)
 

@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Panel de Riesgo de Proveedores</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400..600,0..1,0&display=block">
 <style>
   :root {
     --fondo: #f3f5f9; --tarjeta: #ffffff; --borde: #e3e8f0; --texto: #0f172a; --suave: #64748b;
@@ -11,6 +14,19 @@
     --aviso: #b45309; --aviso-bg: #fef3c7; --gris-bg: #eef2f7; --info: #1d4ed8; --info-bg: #dbeafe;
   }
   * { box-sizing: border-box; }
+  /* Íconos de Google Fonts: <span class="ms">nombre</span> */
+  .ms { font-family: 'Material Symbols Rounded'; font-weight: normal; font-style: normal; font-size: 20px; line-height: 1; letter-spacing: normal; text-transform: none; display: inline-block; white-space: nowrap; direction: ltr; -webkit-font-smoothing: antialiased; font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24; vertical-align: -4px; user-select: none; }
+  .ms.linea { font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24; }
+  .icono-menu .ms { font-size: 18px; vertical-align: 0; }
+  .seccion-titulo .num .ms { font-size: 20px; vertical-align: 0; }
+  .veredicto .icono .ms { font-size: 22px; vertical-align: 0; font-variation-settings: 'FILL' 1, 'wght' 700, 'GRAD' 0, 'opsz' 24; }
+  .progreso li .marca .ms { font-size: 15px; vertical-align: 0; font-variation-settings: 'FILL' 1, 'wght' 700, 'GRAD' 0, 'opsz' 20; }
+  .correo-estado .icono .ms { font-size: 30px; vertical-align: 0; color: var(--marca-2); }
+  .kpi .rotulo .ms { font-size: 18px; color: var(--c); }
+  .paso .estado .ms, .mensaje-form .ms { font-size: 18px; }
+  #progreso-titulo .ms { color: var(--ok); }
+  details.glosario summary .ms { color: var(--marca-2); }
+  .ayuda .ms { font-size: 17px; color: #ca8a04; }
   html { scroll-behavior: smooth; }
   body { margin: 0; background: var(--fondo); color: var(--texto); font: 15px/1.5 'Segoe UI', system-ui, -apple-system, Arial, sans-serif; }
   /* Estructura: menú lateral + contenido */
@@ -217,17 +233,17 @@
   </div>
   <nav aria-label="Menú principal">
     <ul class="menu">
-      <li><a href="#inicio" data-vista="inicio"><span class="icono-menu">🏠</span>Inicio</a></li>
+      <li><a href="#inicio" data-vista="inicio"><span class="icono-menu"><span class="ms" aria-hidden="true">home</span></span>Inicio</a></li>
       <li class="titulo-grupo">Registro</li>
-      <li><a href="#nuevo-pago" data-vista="nuevo-pago"><span class="icono-menu">＋</span>Registrar pago</a></li>
-      <li><a href="#proveedores" data-vista="proveedores"><span class="icono-menu">🏢</span>Proveedores<span class="contador" id="m-proveedores"></span></a></li>
+      <li><a href="#nuevo-pago" data-vista="nuevo-pago"><span class="icono-menu"><span class="ms" aria-hidden="true">add_card</span></span>Registrar pago</a></li>
+      <li><a href="#proveedores" data-vista="proveedores"><span class="icono-menu"><span class="ms" aria-hidden="true">storefront</span></span>Proveedores<span class="contador" id="m-proveedores"></span></a></li>
       <li class="titulo-grupo">Pasos</li>
-      <li><a href="#paso1" data-vista="paso1"><span class="icono-menu">🔍</span>1. Consultar proveedor</a></li>
-      <li><a href="#paso2" data-vista="paso2"><span class="icono-menu">✅</span>2. Revisar pagos<span class="contador alerta-c" id="m-pendientes"></span></a></li>
-      <li><a href="#paso3" data-vista="paso3"><span class="icono-menu">▦</span>3. Comprobantes<span class="contador" id="m-comprobantes"></span></a></li>
-      <li><a href="#paso4" data-vista="paso4"><span class="icono-menu">✉</span>4. Avisos por correo</a></li>
+      <li><a href="#paso1" data-vista="paso1"><span class="icono-menu"><span class="ms" aria-hidden="true">person_search</span></span>1. Consultar proveedor</a></li>
+      <li><a href="#paso2" data-vista="paso2"><span class="icono-menu"><span class="ms" aria-hidden="true">fact_check</span></span>2. Revisar pagos<span class="contador alerta-c" id="m-pendientes"></span></a></li>
+      <li><a href="#paso3" data-vista="paso3"><span class="icono-menu"><span class="ms" aria-hidden="true">qr_code_2</span></span>3. Comprobantes<span class="contador" id="m-comprobantes"></span></a></li>
+      <li><a href="#paso4" data-vista="paso4"><span class="icono-menu"><span class="ms" aria-hidden="true">mail</span></span>4. Avisos por correo</a></li>
       <li class="titulo-grupo">Soporte</li>
-      <li><a href="#ayuda" data-vista="ayuda"><span class="icono-menu">?</span>Ayuda</a></li>
+      <li><a href="#ayuda" data-vista="ayuda"><span class="icono-menu"><span class="ms" aria-hidden="true">help</span></span>Ayuda</a></li>
     </ul>
   </nav>
   <div class="pie-sidebar">
@@ -284,7 +300,7 @@
 
   <!-- REGISTRAR PAGO -->
   <section class="tarjeta vista" id="nuevo-pago">
-    <div class="seccion-titulo"><span class="num">＋</span><h2>Registrar un pago nuevo</h2></div>
+    <div class="seccion-titulo"><span class="num"><span class="ms" aria-hidden="true">add_card</span></span><h2>Registrar un pago nuevo</h2></div>
     <p class="sub">Anote aquí cada factura que haya que pagarle a un proveedor. Queda como <b>«Por revisar»</b> hasta que la revisión del paso 2 la verifique en Hacienda.</p>
     <form id="form-pago" class="formulario" novalidate>
       <label class="campo ancho">Proveedor
@@ -315,7 +331,7 @@
 
   <!-- PROVEEDORES -->
   <section class="tarjeta vista" id="proveedores">
-    <div class="seccion-titulo"><span class="num">🏢</span><h2>Proveedores de la empresa</h2></div>
+    <div class="seccion-titulo"><span class="num"><span class="ms" aria-hidden="true">storefront</span></span><h2>Proveedores de la empresa</h2></div>
     <p class="sub">Solo se les puede registrar pagos a los proveedores de esta lista. Un proveedor <b>inactivo</b> no recibe pagos (sus pagos quedan detenidos).</p>
     <div class="rejilla">
       <div>
@@ -367,7 +383,7 @@
           <input type="text" id="cedula" placeholder="Cédula, por ejemplo 3-101-123456" autocomplete="off" required aria-label="Cédula del proveedor">
           <button type="submit" id="btn">Consultar</button>
         </form>
-        <div class="ayuda">💡 La cédula aparece en la factura electrónica del proveedor. Puede escribirla con o sin guiones.</div>
+        <div class="ayuda"><span class="ms" aria-hidden="true">lightbulb</span> La cédula aparece en la factura electrónica del proveedor. Puede escribirla con o sin guiones.</div>
         <div class="ejemplos">Ejemplos para probar:
           <span class="chip" data-c="4000042149">Universidad de Costa Rica</span>
           <span class="chip" data-c="4000042139">ICE</span>
@@ -422,10 +438,10 @@
     </div>
 
     <div class="kpis">
-      <div class="kpi" style="--c:#047857"><div class="rotulo">✔ Aprobados</div><div class="valor" id="k-aprobado">–</div><div class="detalle" id="k-monto">—</div></div>
-      <div class="kpi" style="--c:#b91c1c"><div class="rotulo">✖ Detenidos</div><div class="valor" id="k-retenido">–</div><div class="detalle">No pagar hasta resolver</div></div>
-      <div class="kpi" style="--c:#1d4ed8"><div class="rotulo">👤 Necesitan aprobación</div><div class="valor" id="k-revision_manual">–</div><div class="detalle">Los decide un supervisor</div></div>
-      <div class="kpi" style="--c:#b45309"><div class="rotulo">⏳ Por revisar</div><div class="valor" id="k-pendientes">–</div><div class="detalle">Esperando la revisión</div></div>
+      <div class="kpi" style="--c:#047857"><div class="rotulo"><span class="ms" aria-hidden="true">check_circle</span> Aprobados</div><div class="valor" id="k-aprobado">–</div><div class="detalle" id="k-monto">—</div></div>
+      <div class="kpi" style="--c:#b91c1c"><div class="rotulo"><span class="ms" aria-hidden="true">block</span> Detenidos</div><div class="valor" id="k-retenido">–</div><div class="detalle">No pagar hasta resolver</div></div>
+      <div class="kpi" style="--c:#1d4ed8"><div class="rotulo"><span class="ms" aria-hidden="true">supervisor_account</span> Necesitan aprobación</div><div class="valor" id="k-revision_manual">–</div><div class="detalle">Los decide un supervisor</div></div>
+      <div class="kpi" style="--c:#b45309"><div class="rotulo"><span class="ms" aria-hidden="true">hourglass_top</span> Por revisar</div><div class="valor" id="k-pendientes">–</div><div class="detalle">Esperando la revisión</div></div>
     </div>
 
     <div class="barra">
@@ -459,7 +475,7 @@
   <section class="tarjeta vista" id="paso4">
     <div class="seccion-titulo"><span class="num">4</span><h2>Avisos por correo a tesorería</h2></div>
     <p class="sub">Después de cada revisión, si hay pagos detenidos o que necesitan aprobación, se envía un correo con el resumen. Si todo sale aprobado, no se envía nada.</p>
-    <div class="correo-estado" id="correo-estado"><span class="icono">✉</span><div>Cargando…</div></div>
+    <div class="correo-estado" id="correo-estado"><span class="icono"><span class="ms" aria-hidden="true">mail</span></span><div>Cargando…</div></div>
     <div class="tabla-scroll">
       <table>
         <thead><tr><th>Revisión</th><th>Resultado</th><th>Correo</th></tr></thead>
@@ -471,7 +487,7 @@
 
   <section class="tarjeta vista" id="ayuda">
     <details class="glosario" open>
-      <summary>📖 ¿Qué significa cada estado?</summary>
+      <summary><span class="ms" aria-hidden="true">menu_book</span> ¿Qué significa cada estado?</summary>
       <div class="glosario-lista">
         <div><span class="etiqueta e-verde">Aprobado</span><p>El proveedor está al día con Hacienda. Se puede pagar; el comprobante QR está en el paso 3.</p></div>
         <div><span class="etiqueta e-rojo">Detenido</span><p>No se debe pagar: el proveedor tiene deudas o declaraciones pendientes con Hacienda, no está registrado o sus datos están mal.</p></div>
@@ -497,12 +513,12 @@
 
   // ---------- Textos en lenguaje sencillo ----------
   const CONSULTA = {
-    apto: { color: 'verde', icono: '✔', titulo: 'Sí, puede pagarle', etiqueta: 'Se puede pagar', explicacion: 'El proveedor está al día con Hacienda: no tiene deudas ni declaraciones pendientes.', hacer: 'Registre el pago normalmente.' },
-    no_apto: { color: 'rojo', icono: '✖', titulo: 'No le pague todavía', etiqueta: 'No pagar', hacer: 'Pídale al proveedor que se ponga al día con Hacienda y vuelva a consultar después.' },
-    no_registrado: { color: 'rojo', icono: '✖', titulo: 'Esta cédula no aparece en Hacienda', etiqueta: 'No registrado', explicacion: 'La cédula tiene el formato correcto, pero no está registrada como contribuyente.', hacer: 'Compare la cédula con la factura. Si está bien escrita, no realice el pago y consulte con su supervisor.' },
-    cedula_invalida: { color: 'amarillo', icono: '!', titulo: 'Revise la cédula', etiqueta: 'Cédula mal escrita', explicacion: 'El número no tiene un formato válido: debe tener de 9 a 12 dígitos.', hacer: 'Escríbala de nuevo tal como aparece en la factura (puede usar guiones).' },
-    error_consulta: { color: 'amarillo', icono: '!', titulo: 'Hacienda no respondió', etiqueta: 'Sin respuesta', explicacion: 'El sistema de Hacienda no contestó en este momento.', hacer: 'Intente de nuevo en unos minutos.' },
-    sin_sistema: { color: 'amarillo', icono: '!', titulo: 'El sistema no está disponible', etiqueta: 'Error', explicacion: 'No hay conexión con el motor de automatización (n8n).', hacer: 'Pida a soporte que abra n8n y vuelva a intentar.' }
+    apto: { color: 'verde', icono: 'check', titulo: 'Sí, puede pagarle', etiqueta: 'Se puede pagar', explicacion: 'El proveedor está al día con Hacienda: no tiene deudas ni declaraciones pendientes.', hacer: 'Registre el pago normalmente.' },
+    no_apto: { color: 'rojo', icono: 'close', titulo: 'No le pague todavía', etiqueta: 'No pagar', hacer: 'Pídale al proveedor que se ponga al día con Hacienda y vuelva a consultar después.' },
+    no_registrado: { color: 'rojo', icono: 'close', titulo: 'Esta cédula no aparece en Hacienda', etiqueta: 'No registrado', explicacion: 'La cédula tiene el formato correcto, pero no está registrada como contribuyente.', hacer: 'Compare la cédula con la factura. Si está bien escrita, no realice el pago y consulte con su supervisor.' },
+    cedula_invalida: { color: 'amarillo', icono: 'priority_high', titulo: 'Revise la cédula', etiqueta: 'Cédula mal escrita', explicacion: 'El número no tiene un formato válido: debe tener de 9 a 12 dígitos.', hacer: 'Escríbala de nuevo tal como aparece en la factura (puede usar guiones).' },
+    error_consulta: { color: 'amarillo', icono: 'priority_high', titulo: 'Hacienda no respondió', etiqueta: 'Sin respuesta', explicacion: 'El sistema de Hacienda no contestó en este momento.', hacer: 'Intente de nuevo en unos minutos.' },
+    sin_sistema: { color: 'amarillo', icono: 'priority_high', titulo: 'El sistema no está disponible', etiqueta: 'Error', explicacion: 'No hay conexión con el motor de automatización (n8n).', hacer: 'Pida a soporte que abra n8n y vuelva a intentar.' }
   };
   const ESTADO_PAGO = {
     aprobado: { texto: 'Aprobado', clase: 'e-verde' },
@@ -535,6 +551,7 @@
 
   // ---------- Utilidades ----------
   const $ = (id) => document.getElementById(id);
+  const ic = (nombre) => `<span class="ms" aria-hidden="true">${nombre}</span>`;
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const horaLocal = (iso) => iso ? new Date(iso).toLocaleString('es-CR', { timeZone: ZONA, day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true }) : '—';
   const diaLocal = (fecha) => fecha.toLocaleDateString('en-CA', { timeZone: ZONA });
@@ -626,15 +643,15 @@
     const ultima = datos.revisiones[0];
     const marcar = (id, hecho, texto, color) => {
       $(id).classList.toggle('hecho', hecho);
-      $(id + '-estado').textContent = texto;
+      $(id + '-estado').innerHTML = texto;
       $(id + '-estado').style.color = color;
     };
-    marcar('guia1', consultasHoy > 0, consultasHoy ? `✔ ${consultasHoy} consulta${consultasHoy > 1 ? 's' : ''} hoy` : 'Aún no ha consultado hoy', consultasHoy ? 'var(--ok)' : 'var(--suave)');
-    marcar('guia2', pendientes === 0 && datos.pagos.length > 0, pendientes ? `⏳ ${pendientes} pago${pendientes > 1 ? 's' : ''} por revisar` : '✔ Todo revisado', pendientes ? 'var(--aviso)' : 'var(--ok)');
+    marcar('guia1', consultasHoy > 0, consultasHoy ? `${ic('check_circle')} ${consultasHoy} consulta${consultasHoy > 1 ? 's' : ''} hoy` : 'Aún no ha consultado hoy', consultasHoy ? 'var(--ok)' : 'var(--suave)');
+    marcar('guia2', pendientes === 0 && datos.pagos.length > 0, pendientes ? `${ic('hourglass_top')} ${pendientes} pago${pendientes > 1 ? 's' : ''} por revisar` : `${ic('check_circle')} Todo revisado`, pendientes ? 'var(--aviso)' : 'var(--ok)');
     $('m-pendientes').textContent = pendientes || '';
     $('m-comprobantes').textContent = comprobantes || '';
-    marcar('guia3', comprobantes > 0, comprobantes ? `✔ ${comprobantes} comprobante${comprobantes > 1 ? 's' : ''} listo${comprobantes > 1 ? 's' : ''}` : 'Aparecen al aprobar pagos', comprobantes ? 'var(--ok)' : 'var(--suave)');
-    const textoCorreo = !ultima ? 'Se envía tras la revisión' : ultima.correoEnviado ? `✔ Enviado ${hace(ultima.fecha)}` : ultima.correoNecesario ? '⚠ No se pudo enviar' : '✔ No fue necesario';
+    marcar('guia3', comprobantes > 0, comprobantes ? `${ic('check_circle')} ${comprobantes} comprobante${comprobantes > 1 ? 's' : ''} listo${comprobantes > 1 ? 's' : ''}` : 'Aparecen al aprobar pagos', comprobantes ? 'var(--ok)' : 'var(--suave)');
+    const textoCorreo = !ultima ? 'Se envía tras la revisión' : ultima.correoEnviado ? `${ic('mark_email_read')} Enviado ${hace(ultima.fecha)}` : ultima.correoNecesario ? `${ic('warning')} No se pudo enviar` : `${ic('check_circle')} No fue necesario`;
     marcar('guia4', !!ultima && (ultima.correoEnviado || !ultima.correoNecesario), textoCorreo, !ultima ? 'var(--suave)' : ultima.correoNecesario && !ultima.correoEnviado ? 'var(--mal)' : 'var(--ok)');
   }
 
@@ -650,7 +667,7 @@
     const s = c.situacion;
     $('resultado').className = 'resultado visible ' + info.color;
     $('resultado').innerHTML = `
-      <div class="veredicto"><span class="icono">${info.icono}</span>${esc(info.titulo)}</div>
+      <div class="veredicto"><span class="icono">${ic(info.icono)}</span>${esc(info.titulo)}</div>
       ${c.nombre ? `<div class="nombre">${esc(c.nombre)}</div>` : ''}
       <div class="bloque"><b>Por qué</b>${esc(textoConsulta(c))}</div>
       <div class="bloque"><b>Qué hacer ahora</b>${esc(info.hacer)}</div>
@@ -745,7 +762,7 @@
   function etapa(n, estado, texto) {
     const li = $('et-' + n);
     li.className = estado;
-    li.querySelector('.marca').textContent = estado === 'listo' ? '✓' : estado === 'fallo' ? '!' : '';
+    li.querySelector('.marca').innerHTML = estado === 'listo' ? ic('check') : estado === 'fallo' ? ic('priority_high') : '';
     if (texto && $('et-' + n + '-texto')) $('et-' + n + '-texto').textContent = texto;
   }
 
@@ -800,7 +817,7 @@
         etapa(4, 'fallo', 'No se pudo enviar el correo (revise la configuración de Gmail en n8n)');
       }
       const t = (revision && revision.totales) || {};
-      $('progreso-titulo').textContent = '✔ Revisión terminada';
+      $('progreso-titulo').innerHTML = `${ic('task_alt')} Revisión terminada`;
       $('resumen-final').style.display = 'block';
       $('resumen-final').innerHTML = `Resultado: <b style="color:var(--ok)">${t.aprobado || 0} aprobado${t.aprobado === 1 ? '' : 's'}</b>, <b style="color:var(--mal)">${t.retenido || 0} detenido${t.retenido === 1 ? '' : 's'}</b>, <b style="color:var(--info)">${t.revision_manual || 0} necesita${t.revision_manual === 1 ? '' : 'n'} aprobación</b>${t.error_verificacion ? `, <b style="color:var(--aviso)">${t.error_verificacion} se reintentará${t.error_verificacion === 1 ? '' : 'n'}</b>` : ''}. Revise la columna «Qué hacer» de la tabla, y los comprobantes en el <a class="enlace" href="#paso3">paso 3</a>.`;
     } catch (e) {
@@ -837,20 +854,20 @@
   // ---------- Paso 4: correo ----------
   function pintarCorreo() {
     const ultima = datos.revisiones[0];
-    let icono = '✉', html;
+    let icono = 'mail', html;
     if (!ultima) {
       html = '<b>Todavía no hay revisiones registradas.</b><div class="detalle">Cuando ejecute el paso 2, aquí verá si se avisó a tesorería.</div>';
     } else if (ultima.correoEnviado) {
-      icono = '✅';
+      icono = 'mark_email_read';
       html = `<b>Último aviso enviado ${hace(ultima.fecha)}</b><div class="detalle">Asunto: «${esc(ultima.asunto)}». Revise la bandeja de entrada de tesorería (o la carpeta de spam la primera vez).</div>`;
     } else if (!ultima.correoNecesario) {
-      icono = '👍';
+      icono = 'thumb_up';
       html = `<b>En la última revisión (${hace(ultima.fecha)}) no hizo falta avisar</b><div class="detalle">Todos los pagos revisados se aprobaron.</div>`;
     } else {
-      icono = '⚠️';
+      icono = 'warning';
       html = `<b>La última revisión no pudo enviar el correo</b><div class="detalle">Había pagos detenidos, pero falló el envío. Revise la credencial de Gmail en n8n (contraseña de aplicación).</div>`;
     }
-    $('correo-estado').innerHTML = `<span class="icono">${icono}</span><div>${html}</div>`;
+    $('correo-estado').innerHTML = `<span class="icono">${ic(icono)}</span><div>${html}</div>`;
     $('revisiones').innerHTML = datos.revisiones.slice(0, 8).map((r) => {
       const t = r.totales || {};
       const correo = r.correoEnviado ? '<span class="etiqueta e-verde">Enviado</span>' : r.correoNecesario ? '<span class="etiqueta e-rojo">Falló</span>' : '<span class="etiqueta e-gris">No hizo falta</span>';
@@ -917,7 +934,7 @@
       if (!r.ok) throw new Error('HTTP ' + r.status);
       $('form-pago').reset(); avisoMonto();
       await cargarDatos();
-      mensaje('pago-mensaje', 'ok', `✔ Pago <b>${esc(pago.id)}</b> registrado: ${esc(nombreProveedor(pago.proveedorId))}, ${esc(pago.montoFormateado())}. Quedó <b>«Por revisar»</b>.<br><button type="button" onclick="location.hash='paso2'">Ir a revisar los pagos</button>`);
+      mensaje('pago-mensaje', 'ok', `${ic('check_circle')} Pago <b>${esc(pago.id)}</b> registrado: ${esc(nombreProveedor(pago.proveedorId))}, ${esc(pago.montoFormateado())}. Quedó <b>«Por revisar»</b>.<br><button type="button" onclick="location.hash='paso2'">Ir a revisar los pagos</button>`);
     } catch {
       mensaje('pago-mensaje', 'error', 'No se pudo guardar el pago: no hay conexión con los datos (JSON Server).');
     }
@@ -943,7 +960,7 @@
       if (!r.ok) throw new Error('HTTP ' + r.status);
       $('form-proveedor').reset();
       await cargarDatos();
-      mensaje('prov-mensaje', 'ok', `✔ Proveedor <b>${esc(proveedor.nombre)}</b> agregado. Ya puede registrarle pagos.<br><button type="button" data-consultar="${esc(proveedor.cedula)}">Consultarlo en Hacienda</button><button type="button" class="secundario" onclick="location.hash='nuevo-pago'">Registrarle un pago</button>`);
+      mensaje('prov-mensaje', 'ok', `${ic('check_circle')} Proveedor <b>${esc(proveedor.nombre)}</b> agregado. Ya puede registrarle pagos.<br><button type="button" data-consultar="${esc(proveedor.cedula)}">Consultarlo en Hacienda</button><button type="button" class="secundario" onclick="location.hash='nuevo-pago'">Registrarle un pago</button>`);
     } catch {
       mensaje('prov-mensaje', 'error', 'No se pudo guardar el proveedor: no hay conexión con los datos (JSON Server).');
     }
