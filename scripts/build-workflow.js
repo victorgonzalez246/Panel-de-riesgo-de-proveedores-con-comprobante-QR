@@ -1,4 +1,4 @@
-// Genera n8n/workflow-panel-riesgo.json.
+// Genera n8n/workflow-panel-riesgo.json y n8n/workflow-consulta-cedula.json.
 //
 // Los nodos Code del workflow reciben una copia exacta de las clases de src/
 // (sin las líneas require/module.exports), así la lógica de negocio vive en un solo lugar.
@@ -9,7 +9,7 @@ const path = require('path');
 const crypto = require('crypto');
 
 const raiz = path.join(__dirname, '..');
-const ARCHIVOS_CLASES = ['config.js', 'Proveedor.js', 'Pago.js', 'ComprobanteQR.js', 'EvaluadorRiesgo.js'];
+const ARCHIVOS_CLASES = ['config.js', 'Proveedor.js', 'Pago.js', 'ComprobanteQR.js', 'EvaluadorRiesgo.js', 'DiagnosticoProveedor.js'];
 
 function cargarClases() {
   return ARCHIVOS_CLASES.map((archivo) => {
@@ -234,3 +234,8 @@ const destino = path.join(raiz, 'n8n', 'workflow-panel-riesgo.json');
 fs.mkdirSync(path.dirname(destino), { recursive: true });
 fs.writeFileSync(destino, `${JSON.stringify(workflow, null, 2)}\n`);
 console.log(`Workflow generado: ${path.relative(raiz, destino)} (${nodos.length} nodos)`);
+
+const consulta = require('./workflow-consulta')({ nodo, condicion, codigoNodo, idNodo, respuestaCompleta });
+const destinoConsulta = path.join(raiz, 'n8n', 'workflow-consulta-cedula.json');
+fs.writeFileSync(destinoConsulta, `${JSON.stringify(consulta, null, 2)}\n`);
+console.log(`Workflow generado: ${path.relative(raiz, destinoConsulta)} (${consulta.nodes.length} nodos)`);

@@ -14,14 +14,18 @@ La lógica de negocio está modelada con clases en JavaScript puro (`src/`), y e
 │   ├── Proveedor.js         cédula, actividad y situación tributaria
 │   ├── Pago.js              validación, umbral, vencimiento y cambios de estado
 │   ├── ComprobanteQR.js     código y URL del comprobante QR
-│   └── EvaluadorRiesgo.js   validar() y evaluar(): las dos decisiones del workflow
+│   ├── EvaluadorRiesgo.js   validar() y evaluar(): las dos decisiones del workflow
+│   └── DiagnosticoProveedor.js  consulta puntual de una cédula (panel web)
 ├── main.js                  prueba las clases por consola sin n8n
-├── tests/reglas.test.js     15 pruebas automatizadas (R1–R9, E1–E4)
+├── tests/                   20 pruebas automatizadas (R1–R9, E1–E4 y el diagnóstico)
+├── public/index.html        panel web (extra opcional), lo sirve JSON Server
 ├── db.json                  base de datos de JSON Server
 ├── data/
 │   ├── db.inicial.json      datos de prueba originales (para reiniciar)
 │   └── respuestas-hacienda.json  respuestas reales de Hacienda guardadas
-├── n8n/workflow-panel-riesgo.json   workflow exportado (importar en n8n)
+├── n8n/
+│   ├── workflow-panel-riesgo.json    workflow principal (revisión diaria de pagos)
+│   └── workflow-consulta-cedula.json Webhook que usa el panel web
 ├── scripts/
 │   ├── build-workflow.js    genera el workflow copiando las clases a los nodos Code
 │   └── reset-db.js          restaura db.json
@@ -37,7 +41,7 @@ Requisitos: Node.js 18+ y n8n (probado con n8n 2.38.6 local).
 
 ```bash
 npm install
-npm test              # 15 pruebas de las reglas
+npm test              # 20 pruebas de las reglas
 node main.js          # métodos de las clases + evaluación de los 10 pagos
 node main.js --en-vivo   # igual, pero consultando Hacienda en este momento
 npm run api:limpio    # reinicia db.json y levanta JSON Server en http://127.0.0.1:3000
@@ -47,7 +51,29 @@ En n8n: **Workflows → Import from File →** `n8n/workflow-panel-riesgo.json`,
 
 > JSON Server se levanta sin `--watch` y en `127.0.0.1` a propósito. Con `--watch` se recarga a sí mismo tras cada escritura y deja de responder por un instante; con `localhost`, n8n intenta conectar por IPv6 (`::1`), que JSON Server no escucha.
 
-Si se cambia una clase de `src/`, regenerar el workflow con `npm run build:workflow` y volver a importarlo.
+Si se cambia una clase de `src/`, regenerar los workflows con `npm run build:workflow` y volver a importarlos.
+
+## Panel web (extra opcional)
+
+> El laboratorio pide una solución "sin interfaz visual". El panel es un **agregado**: no reemplaza ni modifica el workflow principal, y usa las mismas clases.
+
+Panel ejecutivo en **http://127.0.0.1:3000** (lo sirve JSON Server desde `public/`):
+
+- Indicadores de los pagos: aprobados, retenidos, en revisión manual y por verificar.
+- **Consultar proveedor**: se ingresa una cédula (acepta guiones) y se verifica en tiempo real.
+- **Consultas anteriores**: el historial guardado en `/consultas`, con fecha y hora de Costa Rica y un filtro.
+- Tabla de pagos con su estado y enlace al comprobante QR.
+
+La consulta pasa por n8n. El panel hace `POST http://localhost:5678/webhook/consulta-cedula`; el workflow **Consulta de cédula (panel)** valida la cédula con `DiagnosticoProveedor` (R6), consulta Hacienda, interpreta la respuesta (R1, R2, R3, E1, E2), guarda la consulta en JSON Server y le responde al panel.
+
+Para que el webhook responda, ese workflow debe estar **publicado**:
+
+```bash
+n8n import:workflow --input=n8n/workflow-consulta-cedula.json
+n8n publish:workflow --id=ConsultaCedula01   # con n8n detenido; luego n8n start
+```
+
+(o abrirlo en n8n y pulsar **Publish**). Enlace directo para la demo: `http://127.0.0.1:3000/?cedula=4000042139`.
 
 ## Datos de prueba
 

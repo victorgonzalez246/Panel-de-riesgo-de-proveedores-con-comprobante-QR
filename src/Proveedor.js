@@ -15,6 +15,11 @@ class Proveedor {
     this.situacion = null; // se completa con la respuesta de Hacienda
   }
 
+  // Quita guiones, puntos y espacios de una cédula digitada (ej. "4-000-042139")
+  static normalizarCedula(cedula) {
+    return cedula == null ? '' : String(cedula).replace(/[\s.-]/g, '');
+  }
+
   // R7: la empresa solo le paga a proveedores activos en su registro
   estaActivo() {
     return this.activo;

@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Panel de Riesgo de Proveedores</title>
+<style>
+  :root {
+    --fondo: #f3f5f9; --tarjeta: #ffffff; --borde: #e3e8f0; --texto: #0f172a; --suave: #64748b;
+    --marca: #0b2a5b; --marca-2: #1d4ed8; --ok: #047857; --ok-bg: #d1fae5; --mal: #b91c1c; --mal-bg: #fee2e2;
+    --aviso: #b45309; --aviso-bg: #fef3c7; --gris-bg: #eef2f7; --info: #1d4ed8; --info-bg: #dbeafe;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--fondo); color: var(--texto); font: 14px/1.45 'Segoe UI', system-ui, -apple-system, Arial, sans-serif; }
+  header { background: linear-gradient(120deg, var(--marca), #12398a); color: #fff; padding: 18px 28px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  .logo { width: 42px; height: 42px; border-radius: 10px; background: rgba(255,255,255,.14); display: grid; place-items: center; font-weight: 700; font-size: 18px; }
+  header h1 { margin: 0; font-size: 19px; font-weight: 600; letter-spacing: .2px; }
+  header p { margin: 2px 0 0; font-size: 12.5px; opacity: .8; }
+  .cabecera-der { margin-left: auto; text-align: right; }
+  .reloj { font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .fecha { font-size: 12px; opacity: .8; }
+  .estados { display: flex; gap: 12px; justify-content: flex-end; margin-top: 6px; font-size: 12px; }
+  .punto { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; margin-right: 5px; vertical-align: middle; }
+  .punto.on { background: #34d399; box-shadow: 0 0 0 3px rgba(52,211,153,.25); }
+  .punto.off { background: #f87171; }
+  main { max-width: 1240px; margin: 0 auto; padding: 22px 24px 40px; }
+  .kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 18px; }
+  .kpi { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 12px; padding: 14px 16px; border-top: 3px solid var(--c, var(--marca-2)); }
+  .kpi .rotulo { color: var(--suave); font-size: 12px; text-transform: uppercase; letter-spacing: .5px; font-weight: 600; }
+  .kpi .valor { font-size: 26px; font-weight: 700; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .kpi .detalle { color: var(--suave); font-size: 12px; }
+  .rejilla { display: grid; grid-template-columns: 400px minmax(0, 1fr); gap: 18px; align-items: start; }
+  .rejilla > *, .kpis > * { min-width: 0; }
+  .tarjeta { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 12px; padding: 18px 20px; margin-bottom: 18px; }
+  .tarjeta h2 { margin: 0 0 4px; font-size: 15px; font-weight: 600; }
+  .tarjeta .sub { margin: 0 0 14px; color: var(--suave); font-size: 12.5px; }
+  form { display: flex; gap: 8px; }
+  input[type=text], input[type=search] { flex: 1; min-width: 0; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font: inherit; font-size: 15px; letter-spacing: .5px; }
+  input:focus { outline: 2px solid #93c5fd; border-color: var(--marca-2); }
+  button { padding: 10px 16px; border: 0; border-radius: 8px; background: var(--marca-2); color: #fff; font: inherit; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  button:hover { background: #1e40af; }
+  button:disabled { background: #94a3b8; cursor: wait; }
+  .ejemplos { margin-top: 10px; font-size: 12px; color: var(--suave); display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .chip { background: var(--gris-bg); border: 1px solid var(--borde); border-radius: 999px; padding: 2px 9px; cursor: pointer; color: var(--texto); }
+  .chip:hover { border-color: var(--marca-2); }
+  .resultado { margin-top: 16px; border-radius: 10px; padding: 16px; border: 1px solid var(--borde); display: none; }
+  .resultado.visible { display: block; }
+  .veredicto { font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .resultado.apto { background: var(--ok-bg); border-color: #a7f3d0; } .resultado.apto .veredicto { color: var(--ok); }
+  .resultado.no_apto, .resultado.cedula_invalida, .resultado.no_registrado { background: var(--mal-bg); border-color: #fecaca; }
+  .resultado.no_apto .veredicto, .resultado.cedula_invalida .veredicto, .resultado.no_registrado .veredicto { color: var(--mal); }
+  .resultado.error_consulta, .resultado.error { background: var(--aviso-bg); border-color: #fde68a; } .resultado.error_consulta .veredicto, .resultado.error .veredicto { color: var(--aviso); }
+  .resultado .nombre { font-size: 15px; font-weight: 600; margin-top: 6px; }
+  .resultado dl { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; margin: 10px 0 8px; font-size: 13px; }
+  .resultado dt { color: var(--suave); } .resultado dd { margin: 0; font-weight: 600; }
+  .resultado ul { margin: 6px 0 0; padding-left: 18px; font-size: 13px; }
+  .resultado .hora { margin-top: 8px; font-size: 12px; color: var(--suave); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; color: var(--suave); font-weight: 600; font-size: 11.5px; text-transform: uppercase; letter-spacing: .4px; padding: 8px 10px; border-bottom: 1px solid var(--borde); background: #f8fafc; }
+  td { padding: 9px 10px; border-bottom: 1px solid #eef2f7; vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.hora-col { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .mono { font-family: Consolas, 'Cascadia Mono', monospace; font-size: 12.5px; }
+  .etiqueta { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+  .e-apto, .e-aprobado { background: var(--ok-bg); color: var(--ok); }
+  .e-no_apto, .e-retenido, .e-cedula_invalida, .e-no_registrado { background: var(--mal-bg); color: var(--mal); }
+  .e-error_consulta, .e-error_verificacion { background: var(--aviso-bg); color: var(--aviso); }
+  .e-revision_manual { background: var(--info-bg); color: var(--info); }
+  .e-pendiente { background: var(--gris-bg); color: var(--suave); }
+  .motivo { color: var(--suave); font-size: 12px; max-width: 360px; }
+  .barra { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+  .barra input { max-width: 260px; font-size: 13px; padding: 8px 10px; letter-spacing: 0; }
+  .vacio { text-align: center; color: var(--suave); padding: 24px 0; }
+  a.qr { color: var(--marca-2); font-weight: 600; text-decoration: none; } a.qr:hover { text-decoration: underline; }
+  .alerta { background: var(--aviso-bg); color: #7c2d12; border: 1px solid #fde68a; border-radius: 10px; padding: 10px 14px; margin-bottom: 16px; font-size: 13px; display: none; }
+  .tabla-scroll { overflow-x: auto; }
+  footer { text-align: center; color: var(--suave); font-size: 12px; padding-bottom: 24px; }
+  @media (max-width: 1000px) { .rejilla { grid-template-columns: minmax(0, 1fr); } .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 560px) { header { padding: 16px; } main { padding: 16px; } .cabecera-der { margin-left: 0; text-align: left; } .estados { justify-content: flex-start; } form { flex-direction: column; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">PR</div>
+  <div>
+    <h1>Panel de Riesgo de Proveedores</h1>
+    <p>Verificación tributaria ante Hacienda · Tesorería</p>
+  </div>
+  <div class="cabecera-der">
+    <div class="reloj" id="reloj">--:--:--</div>
+    <div class="fecha" id="fecha">Hora de Costa Rica</div>
+    <div class="estados">
+      <span><span class="punto" id="st-api"></span>JSON Server</span>
+      <span><span class="punto" id="st-n8n"></span>n8n</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="alerta" id="alerta"></div>
+
+  <section class="kpis" id="kpis">
+    <div class="kpi" style="--c:#047857"><div class="rotulo">Aprobados</div><div class="valor" id="k-aprobado">–</div><div class="detalle" id="k-monto">–</div></div>
+    <div class="kpi" style="--c:#b91c1c"><div class="rotulo">Retenidos</div><div class="valor" id="k-retenido">–</div><div class="detalle">Riesgo tributario</div></div>
+    <div class="kpi" style="--c:#1d4ed8"><div class="rotulo">Revisión manual</div><div class="valor" id="k-revision_manual">–</div><div class="detalle">Requieren una persona</div></div>
+    <div class="kpi" style="--c:#b45309"><div class="rotulo">Por verificar</div><div class="valor" id="k-pendientes">–</div><div class="detalle">Pendientes o con error</div></div>
+    <div class="kpi" style="--c:#0b2a5b"><div class="rotulo">Consultas hoy</div><div class="valor" id="k-consultas">–</div><div class="detalle" id="k-consultas-total">–</div></div>
+  </section>
+
+  <div class="rejilla">
+    <div>
+      <section class="tarjeta">
+        <h2>Consultar proveedor</h2>
+        <p class="sub">Ingrese la cédula física o jurídica. Se verifica en tiempo real con Hacienda.</p>
+        <form id="form">
+          <input type="text" id="cedula" placeholder="Ej. 4-000-042149" autocomplete="off" required>
+          <button type="submit" id="btn">Consultar</button>
+        </form>
+        <div class="ejemplos">Pruebe:
+          <span class="chip" data-c="4000042149">UCR</span>
+          <span class="chip" data-c="4000042139">ICE</span>
+          <span class="chip" data-c="4000042147">CCSS</span>
+          <span class="chip" data-c="3101000107">No registrada</span>
+          <span class="chip" data-c="12-345">Inválida</span>
+        </div>
+        <div class="resultado" id="resultado"></div>
+      </section>
+    </div>
+
+    <section class="tarjeta">
+      <div class="barra">
+        <div>
+          <h2>Consultas anteriores</h2>
+          <p class="sub" style="margin:0">Historial guardado en JSON Server · hora local de Costa Rica</p>
+        </div>
+        <input type="search" id="filtro" placeholder="Filtrar por cédula o nombre">
+      </div>
+      <div class="tabla-scroll">
+        <table>
+          <thead><tr><th>Fecha y hora</th><th>Cédula</th><th>Proveedor</th><th>Resultado</th><th>Detalle</th></tr></thead>
+          <tbody id="historial"><tr><td colspan="5" class="vacio">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <section class="tarjeta">
+    <div class="barra">
+      <div>
+        <h2>Pagos a proveedores</h2>
+        <p class="sub" style="margin:0">Resultado de la revisión automática del workflow diario</p>
+      </div>
+    </div>
+    <div class="tabla-scroll">
+      <table>
+        <thead><tr><th>Pago</th><th>Proveedor</th><th>Concepto</th><th>Monto</th><th>Estado</th><th>Revisado</th><th>Comprobante</th></tr></thead>
+        <tbody id="pagos"><tr><td colspan="7" class="vacio">Cargando…</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+<footer>Laboratorio #1 · POO + n8n · Panel de riesgo de proveedores con comprobante QR</footer>
+
+<script>
+  const API = location.protocol.startsWith('http') ? location.origin : 'http://127.0.0.1:3000';
+  const WEBHOOK = 'http://localhost:5678/webhook/consulta-cedula';
+  const ZONA = 'America/Costa_Rica';
+
+  const RESULTADOS = {
+    apto: { texto: 'Apto para pago', icono: '✔' },
+    no_apto: { texto: 'No apto para pago', icono: '✖' },
+    no_registrado: { texto: 'No registrado en Hacienda', icono: '✖' },
+    cedula_invalida: { texto: 'Cédula inválida', icono: '✖' },
+    error_consulta: { texto: 'No se pudo verificar', icono: '!' },
+    error: { texto: 'Sin conexión con n8n', icono: '!' }
+  };
+  const ESTADOS_PAGO = { aprobado: 'Aprobado', retenido: 'Retenido', revision_manual: 'Revisión manual', error_verificacion: 'Error de verificación', pendiente: 'Pendiente' };
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const horaLocal = (iso) => iso ? new Date(iso).toLocaleString('es-CR', { timeZone: ZONA, day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }) : '—';
+  const diaLocal = (fecha) => fecha.toLocaleDateString('en-CA', { timeZone: ZONA });
+  const monto = (valor, moneda) => valor == null ? '—' : (moneda === 'USD' ? '$' : '₡') + Number(valor).toLocaleString('es-CR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const sinCodigo = (texto) => String(texto || '').replace(/^\[[A-Z0-9]+\]\s*/, '');
+
+  function reloj() {
+    const ahora = new Date();
+    $('reloj').textContent = ahora.toLocaleTimeString('es-CR', { timeZone: ZONA, hour12: true });
+    $('fecha').textContent = ahora.toLocaleDateString('es-CR', { timeZone: ZONA, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + ' · Costa Rica';
+  }
+
+  function alerta(texto) {
+    $('alerta').style.display = texto ? 'block' : 'none';
+    $('alerta').innerHTML = texto || '';
+  }
+
+  async function obtener(ruta) {
+    const r = await fetch(API + ruta, { cache: 'no-store' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  }
+
+  let consultas = [];
+
+  async function cargarDatos() {
+    try {
+      const [pagos, hist, proveedores] = await Promise.all([obtener('/pagos'), obtener('/consultas'), obtener('/proveedores')]);
+      $('st-api').className = 'punto on';
+      consultas = hist.sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
+      pintarKpis(pagos);
+      pintarPagos(pagos, proveedores);
+      pintarHistorial();
+      if ($('alerta').dataset.tipo === 'api') alerta('');
+    } catch (e) {
+      $('st-api').className = 'punto off';
+      $('alerta').dataset.tipo = 'api';
+      alerta('<b>JSON Server no responde.</b> Ejecute <code>npm run api</code> en la carpeta del proyecto y recargue la página.');
+    }
+  }
+
+  function pintarKpis(pagos) {
+    const cuenta = (estado) => pagos.filter((p) => p.estado === estado).length;
+    $('k-aprobado').textContent = cuenta('aprobado');
+    $('k-retenido').textContent = cuenta('retenido');
+    $('k-revision_manual').textContent = cuenta('revision_manual');
+    $('k-pendientes').textContent = cuenta('pendiente') + cuenta('error_verificacion');
+    const aprobadosCRC = pagos.filter((p) => p.estado === 'aprobado' && p.moneda === 'CRC').reduce((s, p) => s + (p.monto || 0), 0);
+    const aprobadosUSD = pagos.filter((p) => p.estado === 'aprobado' && p.moneda === 'USD').reduce((s, p) => s + (p.monto || 0), 0);
+    $('k-monto').textContent = monto(aprobadosCRC, 'CRC') + (aprobadosUSD ? ' + ' + monto(aprobadosUSD, 'USD') : '');
+    const hoy = diaLocal(new Date());
+    $('k-consultas').textContent = consultas.filter((c) => c.fecha && diaLocal(new Date(c.fecha)) === hoy).length;
+    $('k-consultas-total').textContent = consultas.length + ' en total';
+  }
+
+  function pintarPagos(pagos, proveedores) {
+    const nombre = (id) => (proveedores.find((p) => p.id === id) || {}).nombre || id || '—';
+    $('pagos').innerHTML = pagos.map((p) => `
+      <tr>
+        <td class="mono">${esc(p.id)}</td>
+        <td>${esc(nombre(p.proveedorId))}</td>
+        <td>${esc(p.concepto)}${p.motivo ? `<div class="motivo">${esc(p.motivo)}</div>` : ''}</td>
+        <td class="num">${monto(p.monto, p.moneda)}</td>
+        <td><span class="etiqueta e-${esc(p.estado)}">${esc(ESTADOS_PAGO[p.estado] || p.estado)}</span>${p.prioridad === 'alta' ? ' <span class="etiqueta e-error_verificacion">Prioridad alta</span>' : ''}</td>
+        <td class="hora-col">${p.fechaRevision ? horaLocal(p.fechaRevision) : '—'}</td>
+        <td>${p.qrUrl ? `<a class="qr" href="${esc(p.qrUrl)}" target="_blank" rel="noopener">Ver QR</a>` : '—'}</td>
+      </tr>`).join('') || '<tr><td colspan="7" class="vacio">Sin pagos registrados</td></tr>';
+  }
+
+  function pintarHistorial() {
+    const filtro = $('filtro').value.trim().toLowerCase();
+    const filas = consultas.filter((c) => !filtro || (c.cedula || '').includes(filtro.replace(/[\s.-]/g, '')) || (c.nombre || '').toLowerCase().includes(filtro));
+    $('historial').innerHTML = filas.map((c) => `
+      <tr>
+        <td class="hora-col">${horaLocal(c.fecha)}</td>
+        <td class="mono">${esc(c.cedula)}</td>
+        <td>${esc(c.nombre || '—')}</td>
+        <td><span class="etiqueta e-${esc(c.resultado)}">${esc((RESULTADOS[c.resultado] || {}).texto || c.resultado)}</span></td>
+        <td class="motivo">${esc((c.motivos || []).map(sinCodigo).join(' · '))}</td>
+      </tr>`).join('') || `<tr><td colspan="5" class="vacio">${consultas.length ? 'Ninguna consulta coincide con el filtro' : 'Todavía no hay consultas. Ingrese una cédula para empezar.'}</td></tr>`;
+  }
+
+  function pintarResultado(r) {
+    const info = RESULTADOS[r.resultado] || { texto: r.resultado, icono: '•' };
+    const s = r.situacion;
+    $('resultado').className = 'resultado visible ' + r.resultado;
+    $('resultado').innerHTML = `
+      <div class="veredicto"><span>${info.icono}</span>${esc(info.texto)}</div>
+      ${r.nombre ? `<div class="nombre">${esc(r.nombre)}</div>` : ''}
+      <dl>
+        <dt>Cédula</dt><dd class="mono">${esc(r.cedula)}</dd>
+        ${s ? `<dt>Moroso</dt><dd>${esc(s.moroso)}</dd><dt>Omiso</dt><dd>${esc(s.omiso)}</dd><dt>Situación</dt><dd>${esc(s.estado)}</dd>` : ''}
+      </dl>
+      <ul>${(r.motivos || []).map((m) => `<li>${esc(m)}</li>`).join('')}</ul>
+      ${r.fecha ? `<div class="hora">Consultado el ${horaLocal(r.fecha)}</div>` : ''}`;
+  }
+
+  async function consultar(cedula) {
+    $('btn').disabled = true;
+    $('btn').textContent = 'Consultando…';
+    try {
+      const llamar = () => fetch(WEBHOOK, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cedula }) });
+      // n8n puede responder 500 en los primeros segundos después de arrancar: se reintenta una vez
+      let r = await llamar().catch(() => null);
+      if (!r || r.status >= 500) { await new Promise((ok) => setTimeout(ok, 2000)); r = await llamar(); }
+      if (!r.ok) throw new Error('n8n respondió HTTP ' + r.status);
+      const datos = await r.json();
+      $('st-n8n').className = 'punto on';
+      pintarResultado(datos);
+      await cargarDatos();
+    } catch (e) {
+      $('st-n8n').className = 'punto off';
+      pintarResultado({
+        resultado: 'error', cedula,
+        motivos: ['No se pudo contactar el workflow de n8n (' + e.message + ').', 'Verifique que n8n esté abierto y que el workflow "Consulta de cédula (panel)" esté publicado.']
+      });
+    } finally {
+      $('btn').disabled = false;
+      $('btn').textContent = 'Consultar';
+    }
+  }
+
+  async function revisarN8n() {
+    try { await fetch('http://localhost:5678/healthz', { mode: 'no-cors', cache: 'no-store' }); $('st-n8n').className = 'punto on'; }
+    catch { $('st-n8n').className = 'punto off'; }
+  }
+
+  $('form').addEventListener('submit', (e) => { e.preventDefault(); const c = $('cedula').value.trim(); if (c) consultar(c); });
+  document.querySelectorAll('.chip').forEach((chip) => chip.addEventListener('click', () => { $('cedula').value = chip.dataset.c; consultar(chip.dataset.c); }));
+  $('filtro').addEventListener('input', pintarHistorial);
+
+  // Enlace directo: http://127.0.0.1:3000/?cedula=4000042149 consulta al abrir
+  const cedulaUrl = new URLSearchParams(location.search).get('cedula');
+  if (cedulaUrl) { $('cedula').value = cedulaUrl; consultar(cedulaUrl); }
+
+  reloj(); setInterval(reloj, 1000);
+  cargarDatos(); setInterval(cargarDatos, 15000);
+  revisarN8n(); setInterval(revisarN8n, 30000);
+</script>
+</body>
+</html>
