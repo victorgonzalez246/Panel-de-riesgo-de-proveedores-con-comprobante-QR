@@ -138,18 +138,23 @@ Si se cambia una clase de `src/`, regenerar los workflows con `npm run build:wor
 
 > El laboratorio pide una solución "sin interfaz visual". El panel es un **agregado**: no reemplaza ni modifica el workflow principal, y usa las mismas clases.
 
-Panel ejecutivo en **http://127.0.0.1:3000** (lo sirve JSON Server desde `public/`):
+Panel en **http://127.0.0.1:3000** (lo sirve JSON Server desde `public/`). Está pensado para alguien que nunca lo ha usado: un menú lateral lleva paso a paso por las cuatro tareas, cada resultado se explica en lenguaje sencillo con **qué hacer ahora**, y la sección *Ayuda* explica cada estado.
+
+| Opción del menú | Qué permite |
+|---|---|
+| **Inicio** | Guía de los 4 pasos con el estado de cada uno (consultas de hoy, pagos por revisar, comprobantes, último correo). |
+| **1. Consultar proveedor** | Escribir una cédula (acepta guiones) y saber si se le puede pagar, por qué y qué hacer; historial con hora de Costa Rica y filtro *Se puede pagar / No pagar*. |
+| **2. Revisar pagos** | Botón que lanza el workflow principal (`POST /webhook/revision-pagos`) y muestra el avance por etapas; tabla de pagos con filtros y una columna *Qué hacer*. |
+| **3. Comprobantes** | Los QR de los pagos aprobados, para escanear, abrir o descargar. |
+| **4. Avisos por correo** | Si la última revisión envió el correo a tesorería, no hizo falta o falló, y el historial de revisiones (`/revisiones`). |
+
+![Panel: inicio](docs/img/panel-inicio.png)
 
 ![Panel: consulta de cédulas e historial](docs/img/panel-consultas.png)
 
-![Comprobantes de pago aprobados](docs/img/panel-comprobantes.png)
+![Panel: revisión de pagos](docs/img/panel-revision.png)
 
-- Indicadores de los pagos: aprobados, retenidos, en revisión manual y por verificar.
-- **Consultar proveedor**: se ingresa una cédula (acepta guiones) y se verifica en tiempo real.
-- **Consultas anteriores**: el historial guardado en `/consultas`, con fecha y hora de Costa Rica y un filtro.
-- **Comprobantes de pago aprobados**: tarjetas con la imagen del QR de cada pago aprobado, para abrirlo o descargarlo.
-- **Ejecutar revisión de pagos**: botón que dispara el workflow principal (`POST /webhook/revision-pagos`) y va mostrando el avance hasta que termina.
-- Tabla de pagos con su estado, motivo y enlace al comprobante QR.
+![Panel: comprobantes de pago aprobados](docs/img/panel-comprobantes.png)
 
 La consulta pasa por n8n. El panel hace `POST http://localhost:5678/webhook/consulta-cedula`; el workflow **Consulta de cédula (panel)** valida la cédula con `DiagnosticoProveedor` (R6), consulta Hacienda, interpreta la respuesta (R1, R2, R3, E1, E2), guarda la consulta en JSON Server y le responde al panel.
 

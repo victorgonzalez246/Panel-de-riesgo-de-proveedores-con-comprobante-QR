@@ -175,7 +175,7 @@ const nodos = [
   nodo('Generar comprobante QR', 'n8n-nodes-base.httpRequest', 4.2, [2420, -200], {
     url: '={{ $json.cambios.qrUrl }}',
     options: { response: { response: { responseFormat: 'file' } }, timeout: 30000 }
-  }, { onError: 'continueErrorOutput', retryOnFail: true, maxTries: 3, waitBetweenTries: 2000 }),
+  }, { onError: 'continueErrorOutput', retryOnFail: true, maxTries: 5, waitBetweenTries: 3000 }),
 
   nodo('Registrar pago aprobado', 'n8n-nodes-base.httpRequest', 4.2, [2640, -260], {
     method: 'PATCH',
@@ -246,7 +246,17 @@ const nodos = [
     onError: 'continueRegularOutput'
   }),
 
-  nodo('Sin alertas que enviar', 'n8n-nodes-base.noOp', 1, [3740, 20], {})
+  nodo('Sin alertas que enviar', 'n8n-nodes-base.noOp', 1, [3740, 20], {}),
+
+  // Deja constancia de cada revisión (totales y si se envió el correo); el panel la muestra en el paso 4
+  nodo('Registrar revisión', 'n8n-nodes-base.httpRequest', 4.2, [3960, -80], {
+    method: 'POST',
+    url: `=${URL_JSON_SERVER}/revisiones`,
+    sendBody: true,
+    specifyBody: 'json',
+    jsonBody: "={{ JSON.stringify({ fecha: $now.toISO(), revisados: $('Preparar notificación (POO)').first().json.revisados, totales: $('Preparar notificación (POO)').first().json.totales, asunto: $('Preparar notificación (POO)').first().json.asunto, correoNecesario: $('Preparar notificación (POO)').first().json.enviar, correoEnviado: $('Preparar notificación (POO)').first().json.enviar && !$json.error, correoError: $json.error ? ($json.error.message || 'error al enviar') : null }) }}",
+    options: { timeout: 10000 }
+  }, { onError: 'continueRegularOutput' })
 ];
 
 const enlace = (...destinos) => destinos.map((salida) => salida.map((node) => ({ node, type: 'main', index: 0 })));
@@ -271,7 +281,9 @@ const conexiones = {
   'Registrar resultado del pago': { main: enlace(['Registrar en bitácora']) },
   'Registrar en bitácora': { main: enlace(['Preparar notificación (POO)']) },
   'Preparar notificación (POO)': { main: enlace(['¿Hay situaciones críticas?']) },
-  '¿Hay situaciones críticas?': { main: enlace(['Enviar correo a tesorería'], ['Sin alertas que enviar']) }
+  '¿Hay situaciones críticas?': { main: enlace(['Enviar correo a tesorería'], ['Sin alertas que enviar']) },
+  'Enviar correo a tesorería': { main: enlace(['Registrar revisión']) },
+  'Sin alertas que enviar': { main: enlace(['Registrar revisión']) }
 };
 
 const workflow = {

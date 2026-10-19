@@ -419,8 +419,8 @@
       ],
       "onError": "continueErrorOutput",
       "retryOnFail": true,
-      "maxTries": 3,
-      "waitBetweenTries": 2000
+      "maxTries": 5,
+      "waitBetweenTries": 3000
     },
     {
       "parameters": {
@@ -616,6 +616,27 @@
         3740,
         20
       ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Configuración').first().json.jsonServerUrl }}/revisiones",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ fecha: $now.toISO(), revisados: $('Preparar notificación (POO)').first().json.revisados, totales: $('Preparar notificación (POO)').first().json.totales, asunto: $('Preparar notificación (POO)').first().json.asunto, correoNecesario: $('Preparar notificación (POO)').first().json.enviar, correoEnviado: $('Preparar notificación (POO)').first().json.enviar && !$json.error, correoError: $json.error ? ($json.error.message || 'error al enviar') : null }) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "91138418-eafc-1e12-b2d6-8064f91da159",
+      "name": "Registrar revisión",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3960,
+        -80
+      ],
+      "onError": "continueRegularOutput"
     }
   ],
   "connections": {
@@ -882,6 +903,28 @@
         [
           {
             "node": "Sin alertas que enviar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar correo a tesorería": {
+      "main": [
+        [
+          {
+            "node": "Registrar revisión",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sin alertas que enviar": {
+      "main": [
+        [
+          {
+            "node": "Registrar revisión",
             "type": "main",
             "index": 0
           }
