@@ -156,6 +156,25 @@
   .correo-estado { display: flex; gap: 14px; align-items: flex-start; border-radius: 12px; padding: 14px 16px; margin-bottom: 14px; border: 1px solid var(--borde); background: #f8fafc; }
   .correo-estado .icono { font-size: 24px; line-height: 1; }
 
+  /* Formularios de registro */
+  .formulario { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 16px; }
+  .formulario.una-columna { grid-template-columns: minmax(0, 1fr); }
+  .formulario .ancho { grid-column: 1 / -1; }
+  .campo { display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; font-weight: 600; color: #334155; }
+  .campo input, .campo select { padding: 11px 12px; border: 1px solid #cbd5e1; border-radius: 9px; font: inherit; font-size: 15px; font-weight: 400; color: var(--texto); background: #fff; min-width: 0; }
+  .campo input:focus, .campo select:focus { outline: 2px solid #93c5fd; border-color: var(--marca-2); }
+  .campo.con-error input, .campo.con-error select { border-color: var(--mal); background: #fff7f7; }
+  .campo .error-campo { color: var(--mal); font-weight: 500; font-size: 12.5px; }
+  .campo .ayuda { font-weight: 400; margin-top: 0; }
+  .aviso-campo { justify-content: flex-end; font-weight: 500; }
+  .aviso-campo:empty { display: none; }
+  .acciones-form { display: flex; gap: 10px; flex-wrap: wrap; }
+  .mensaje-form { margin-top: 14px; border-radius: 10px; padding: 12px 14px; font-size: 14px; display: none; }
+  .mensaje-form.ok { display: block; background: var(--ok-bg); color: #064e3b; border: 1px solid #a7f3d0; }
+  .mensaje-form.error { display: block; background: var(--mal-bg); color: #7f1d1d; border: 1px solid #fecaca; }
+  .mensaje-form button { margin-top: 8px; margin-right: 8px; padding: 8px 14px; font-size: 14px; }
+  button.mini { padding: 6px 12px; font-size: 13px; }
+
   .alerta { background: var(--aviso-bg); color: #7c2d12; border: 1px solid #fde68a; border-radius: 12px; padding: 12px 16px; margin-bottom: 18px; font-size: 14px; display: none; }
   .alerta.visible { display: block; }
   .alerta code { background: rgba(0,0,0,.06); padding: 1px 6px; border-radius: 4px; }
@@ -182,6 +201,7 @@
     .pie-sidebar { display: none; }
     main { padding: 18px 16px 32px; }
   }
+  @media (max-width: 760px) { .formulario { grid-template-columns: minmax(0, 1fr); } }
   @media (max-width: 560px) {
     .pasos, .kpis { grid-template-columns: minmax(0, 1fr); }
     form { flex-direction: column; }
@@ -198,6 +218,9 @@
   <nav aria-label="Menú principal">
     <ul class="menu">
       <li><a href="#inicio" data-vista="inicio"><span class="icono-menu">🏠</span>Inicio</a></li>
+      <li class="titulo-grupo">Registro</li>
+      <li><a href="#nuevo-pago" data-vista="nuevo-pago"><span class="icono-menu">＋</span>Registrar pago</a></li>
+      <li><a href="#proveedores" data-vista="proveedores"><span class="icono-menu">🏢</span>Proveedores<span class="contador" id="m-proveedores"></span></a></li>
       <li class="titulo-grupo">Pasos</li>
       <li><a href="#paso1" data-vista="paso1"><span class="icono-menu">🔍</span>1. Consultar proveedor</a></li>
       <li><a href="#paso2" data-vista="paso2"><span class="icono-menu">✅</span>2. Revisar pagos<span class="contador alerta-c" id="m-pendientes"></span></a></li>
@@ -255,9 +278,84 @@
   </section>
   <section class="tarjeta">
     <h2>¿Primera vez aquí?</h2>
-    <p class="sub" style="margin-bottom:0">Empiece por el <a class="enlace" href="#paso1">paso 1</a> con uno de los ejemplos: verá en segundos si se le puede pagar a ese proveedor. Si una palabra no le queda clara, consulte la <a class="enlace" href="#ayuda">Ayuda</a>.</p>
+    <p class="sub" style="margin-bottom:0">Empiece por el <a class="enlace" href="#paso1">paso 1</a> con uno de los ejemplos: verá en segundos si se le puede pagar a ese proveedor. ¿Tiene una factura nueva por pagar? Regístrela en <a class="enlace" href="#nuevo-pago">Registrar pago</a>; si el proveedor no aparece en la lista, agréguelo primero en <a class="enlace" href="#proveedores">Proveedores</a>. Si una palabra no le queda clara, consulte la <a class="enlace" href="#ayuda">Ayuda</a>.</p>
   </section>
   </div>
+
+  <!-- REGISTRAR PAGO -->
+  <section class="tarjeta vista" id="nuevo-pago">
+    <div class="seccion-titulo"><span class="num">＋</span><h2>Registrar un pago nuevo</h2></div>
+    <p class="sub">Anote aquí cada factura que haya que pagarle a un proveedor. Queda como <b>«Por revisar»</b> hasta que la revisión del paso 2 la verifique en Hacienda.</p>
+    <form id="form-pago" class="formulario" novalidate>
+      <label class="campo ancho">Proveedor
+        <select id="pago-proveedor"><option value="">— Elija un proveedor —</option></select>
+        <span class="ayuda">¿No aparece? <a class="enlace" href="#proveedores">Agréguelo en Proveedores</a>.</span>
+      </label>
+      <label class="campo">Monto
+        <input type="number" id="pago-monto" min="0" step="0.01" inputmode="decimal" placeholder="Ej. 450000">
+      </label>
+      <label class="campo">Moneda
+        <select id="pago-moneda"><option value="CRC">Colones (₡)</option><option value="USD">Dólares ($)</option></select>
+      </label>
+      <label class="campo ancho">Concepto
+        <input type="text" id="pago-concepto" maxlength="120" placeholder="¿Qué se está pagando? Ej. Mantenimiento de aires acondicionados">
+      </label>
+      <label class="campo">Fecha de vencimiento
+        <input type="date" id="pago-vencimiento">
+      </label>
+      <div class="campo aviso-campo" id="pago-aviso"></div>
+      <div class="acciones-form ancho">
+        <button type="submit" id="btn-pago">Registrar pago</button>
+        <button type="reset" class="secundario">Limpiar</button>
+      </div>
+    </form>
+    <div class="mensaje-form" id="pago-mensaje" aria-live="polite"></div>
+    <div class="navegacion-pasos"><a href="#inicio">← Inicio</a><a href="#paso2">Ir a revisar los pagos →</a></div>
+  </section>
+
+  <!-- PROVEEDORES -->
+  <section class="tarjeta vista" id="proveedores">
+    <div class="seccion-titulo"><span class="num">🏢</span><h2>Proveedores de la empresa</h2></div>
+    <p class="sub">Solo se les puede registrar pagos a los proveedores de esta lista. Un proveedor <b>inactivo</b> no recibe pagos (sus pagos quedan detenidos).</p>
+    <div class="rejilla">
+      <div>
+        <strong>Agregar un proveedor</strong>
+        <form id="form-proveedor" class="formulario una-columna" novalidate style="margin-top:10px">
+          <label class="campo">Nombre o razón social
+            <input type="text" id="prov-nombre" maxlength="120" placeholder="Ej. Servicios Técnicos del Valle S.A.">
+          </label>
+          <label class="campo">Tipo de identificación
+            <select id="prov-tipo">
+              <option value="02">Cédula jurídica (10 dígitos)</option>
+              <option value="01">Cédula física (9 dígitos)</option>
+              <option value="03">DIMEX (11 o 12 dígitos)</option>
+              <option value="04">NITE (10 dígitos)</option>
+            </select>
+          </label>
+          <label class="campo">Número de cédula
+            <input type="text" id="prov-cedula" placeholder="Ej. 3-101-123456" autocomplete="off">
+            <span class="ayuda">Con o sin guiones. Aparece en sus facturas electrónicas.</span>
+          </label>
+          <label class="campo">Correo (opcional)
+            <input type="email" id="prov-email" placeholder="facturacion@proveedor.com">
+          </label>
+          <div class="acciones-form"><button type="submit" id="btn-proveedor">Agregar proveedor</button></div>
+        </form>
+        <div class="mensaje-form" id="prov-mensaje" aria-live="polite"></div>
+      </div>
+      <div>
+        <div class="barra"><strong>Lista de proveedores</strong></div>
+        <input type="search" id="filtro-prov" placeholder="Buscar por nombre o cédula" style="width:100%;font-size:14px;padding:9px 12px;margin-bottom:10px" aria-label="Buscar proveedor">
+        <div class="tabla-scroll">
+          <table>
+            <thead><tr><th>Proveedor</th><th>Estado</th><th></th></tr></thead>
+            <tbody id="lista-proveedores"><tr><td colspan="3" class="vacio">Cargando…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="navegacion-pasos"><a href="#nuevo-pago">← Registrar pago</a><a href="#paso1">Consultar un proveedor en Hacienda →</a></div>
+  </section>
 
   <!-- PASO 1 -->
   <section class="tarjeta vista" id="paso1">
@@ -389,6 +487,7 @@
 </div>
 </div>
 
+<script src="clases.js"></script>
 <script>
   const API = location.protocol.startsWith('http') ? location.origin : 'http://127.0.0.1:3000';
   const N8N = 'http://localhost:5678';
@@ -515,6 +614,7 @@
     pintarPagos();
     pintarComprobantes();
     pintarCorreo();
+    pintarProveedores();
   }
 
   // ---------- Guía ----------
@@ -623,7 +723,7 @@
       : 'No hay pagos pendientes de revisar';
     $('accion-detalle').textContent = pendientes
       ? 'Pulse el botón y espere unos 15 segundos. También se hace solo todos los días a las 7:00 a. m.'
-      : 'Cuando se registren pagos nuevos aparecerán aquí. Mientras tanto, puede revisar los resultados abajo.';
+      : 'Para agregar uno, use «Registrar pago» en el menú. Mientras tanto, puede revisar los resultados abajo.';
   }
 
   function pintarPagos() {
@@ -758,8 +858,115 @@
     }).join('') || '<tr><td colspan="3" class="vacio">Sin revisiones todavía.</td></tr>';
   }
 
+  // ---------- Registro de pagos y proveedores (validan con las clases de src/, ver clases.js) ----------
+  const { Pago, Proveedor } = window.ClasesPanel;
+  const MENSAJE_CAMPO = { proveedorId: 'Elija un proveedor.', monto: 'Escriba un monto mayor que cero.', moneda: 'Elija la moneda.', concepto: 'Escriba qué se está pagando.', fechaVencimiento: 'Elija la fecha de vencimiento.' };
+  const CAMPO_PAGO = { proveedorId: 'pago-proveedor', monto: 'pago-monto', moneda: 'pago-moneda', concepto: 'pago-concepto', fechaVencimiento: 'pago-vencimiento' };
+  const siguienteId = (lista, prefijo) => `${prefijo}-${String(Math.max(0, ...lista.map((x) => Number(String(x.id).split('-')[1]) || 0)) + 1).padStart(3, '0')}`;
+
+  function marcarError(idCampo, texto) {
+    const campo = $(idCampo).closest('.campo');
+    campo.classList.toggle('con-error', !!texto);
+    let span = campo.querySelector('.error-campo');
+    if (!span) { span = document.createElement('span'); span.className = 'error-campo'; campo.appendChild(span); }
+    span.textContent = texto || '';
+  }
+  function mensaje(id, tipo, html) { $(id).className = 'mensaje-form ' + tipo; $(id).innerHTML = html; }
+
+  function pintarProveedores() {
+    const actual = $('pago-proveedor').value;
+    $('pago-proveedor').innerHTML = '<option value="">— Elija un proveedor —</option>' + datos.proveedores
+      .slice().sort((a, b) => a.nombre.localeCompare(b.nombre))
+      .map((p) => `<option value="${esc(p.id)}">${esc(p.nombre)}${p.activo === false ? ' (inactivo)' : ''}</option>`).join('');
+    $('pago-proveedor').value = actual;
+    $('m-proveedores').textContent = datos.proveedores.length || '';
+    const texto = $('filtro-prov').value.trim().toLowerCase();
+    $('lista-proveedores').innerHTML = datos.proveedores
+      .filter((p) => !texto || p.nombre.toLowerCase().includes(texto) || String(p.cedula).includes(texto.replace(/[\s.-]/g, '')))
+      .map((p) => `<tr>
+        <td><b>${esc(p.nombre)}</b><div class="detalle mono">${esc(p.cedula)}</div></td>
+        <td><span class="etiqueta ${p.activo === false ? 'e-gris' : 'e-verde'}">${p.activo === false ? 'Inactivo' : 'Activo'}</span></td>
+        <td class="nowrap"><button type="button" class="secundario mini" data-consultar="${esc(p.cedula)}">Consultar</button>
+          <button type="button" class="secundario mini" data-activar="${esc(p.id)}" data-valor="${p.activo === false}">${p.activo === false ? 'Activar' : 'Desactivar'}</button></td>
+      </tr>`).join('') || '<tr><td colspan="3" class="vacio">No hay proveedores que coincidan.</td></tr>';
+  }
+
+  function avisoMonto() {
+    const p = new Pago({ monto: Number($('pago-monto').value), moneda: $('pago-moneda').value });
+    $('pago-aviso').innerHTML = p.monto > 0 && p.requiereAprobacionManual()
+      ? `<span class="etiqueta e-azul">Monto alto</span> Por superar ${esc(Pago.formatearMonto(window.ClasesPanel.REGLAS.umbralRevisionManual[p.moneda], p.moneda))}, este pago quedará para aprobación de un supervisor.` : '';
+  }
+
+  async function registrarPago(e) {
+    e.preventDefault();
+    const pago = new Pago({
+      id: siguienteId(datos.pagos, 'PAG'),
+      proveedorId: $('pago-proveedor').value,
+      monto: $('pago-monto').value === '' ? undefined : Number($('pago-monto').value),
+      moneda: $('pago-moneda').value,
+      concepto: $('pago-concepto').value.trim(),
+      fechaVencimiento: $('pago-vencimiento').value,
+      estado: 'pendiente',
+      intentosVerificacion: 0
+    });
+    const faltantes = pago.camposFaltantes();
+    Object.entries(CAMPO_PAGO).forEach(([campo, idCampo]) => marcarError(idCampo, faltantes.includes(campo) ? MENSAJE_CAMPO[campo] : ''));
+    if (faltantes.length) { mensaje('pago-mensaje', 'error', 'Revise los campos marcados en rojo.'); return; }
+    try {
+      const r = await fetch(API + '/pagos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...pago }) });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      $('form-pago').reset(); avisoMonto();
+      await cargarDatos();
+      mensaje('pago-mensaje', 'ok', `✔ Pago <b>${esc(pago.id)}</b> registrado: ${esc(nombreProveedor(pago.proveedorId))}, ${esc(pago.montoFormateado())}. Quedó <b>«Por revisar»</b>.<br><button type="button" onclick="location.hash='paso2'">Ir a revisar los pagos</button>`);
+    } catch {
+      mensaje('pago-mensaje', 'error', 'No se pudo guardar el pago: no hay conexión con los datos (JSON Server).');
+    }
+  }
+
+  async function registrarProveedor(e) {
+    e.preventDefault();
+    const proveedor = new Proveedor({
+      id: siguienteId(datos.proveedores, 'PRV'),
+      nombre: $('prov-nombre').value.trim(),
+      cedula: Proveedor.normalizarCedula($('prov-cedula').value),
+      tipoCedula: $('prov-tipo').value,
+      email: $('prov-email').value.trim(),
+      activo: true
+    });
+    const repetido = datos.proveedores.find((p) => String(p.cedula) === proveedor.cedula);
+    marcarError('prov-nombre', proveedor.nombre ? '' : 'Escriba el nombre del proveedor.');
+    marcarError('prov-cedula', !proveedor.validarCedula() ? 'La cédula no tiene la cantidad de dígitos de ese tipo de identificación.' : repetido ? `Ya existe: ${repetido.nombre}.` : '');
+    if (!proveedor.nombre || !proveedor.validarCedula() || repetido) { mensaje('prov-mensaje', 'error', 'Revise los campos marcados en rojo.'); return; }
+    try {
+      const { situacion, ...registro } = proveedor;
+      const r = await fetch(API + '/proveedores', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(registro) });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      $('form-proveedor').reset();
+      await cargarDatos();
+      mensaje('prov-mensaje', 'ok', `✔ Proveedor <b>${esc(proveedor.nombre)}</b> agregado. Ya puede registrarle pagos.<br><button type="button" data-consultar="${esc(proveedor.cedula)}">Consultarlo en Hacienda</button><button type="button" class="secundario" onclick="location.hash='nuevo-pago'">Registrarle un pago</button>`);
+    } catch {
+      mensaje('prov-mensaje', 'error', 'No se pudo guardar el proveedor: no hay conexión con los datos (JSON Server).');
+    }
+  }
+
+  document.addEventListener('click', async (e) => {
+    const consultarBtn = e.target.closest('[data-consultar]');
+    if (consultarBtn) { location.hash = 'paso1'; $('cedula').value = consultarBtn.dataset.consultar; consultar(consultarBtn.dataset.consultar); return; }
+    const activarBtn = e.target.closest('[data-activar]');
+    if (activarBtn) {
+      activarBtn.disabled = true;
+      await fetch(`${API}/proveedores/${encodeURIComponent(activarBtn.dataset.activar)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ activo: activarBtn.dataset.valor === 'true' }) }).catch(() => null);
+      await cargarDatos();
+    }
+  });
+  $('form-pago').addEventListener('submit', registrarPago);
+  $('form-proveedor').addEventListener('submit', registrarProveedor);
+  $('pago-monto').addEventListener('input', avisoMonto);
+  $('pago-moneda').addEventListener('change', avisoMonto);
+  $('filtro-prov').addEventListener('input', pintarProveedores);
+
   // ---------- Menú lateral: una pantalla por opción (según el #hash de la dirección) ----------
-  const VISTAS = ['inicio', 'paso1', 'paso2', 'paso3', 'paso4', 'ayuda'];
+  const VISTAS = ['inicio', 'nuevo-pago', 'proveedores', 'paso1', 'paso2', 'paso3', 'paso4', 'ayuda'];
   function mostrarVista() {
     const pedida = location.hash.slice(1);
     const id = VISTAS.includes(pedida) ? pedida : 'inicio';

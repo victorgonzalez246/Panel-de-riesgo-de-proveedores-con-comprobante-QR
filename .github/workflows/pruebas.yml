@@ -28,4 +28,4 @@ jobs:
       - name: Los workflows de n8n están al día con las clases de src/
         run: |
           npm run build:workflow
-          git diff --exit-code n8n/ || (echo "::error::Los workflows no coinciden con src/. Ejecute npm run build:workflow y suba los cambios." && exit 1)
+          git diff --exit-code n8n/ public/clases.js || (echo "::error::Los workflows o public/clases.js no coinciden con src/. Ejecute npm run build:workflow y suba los cambios." && exit 1)

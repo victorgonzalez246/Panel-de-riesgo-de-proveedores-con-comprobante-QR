@@ -302,6 +302,20 @@ fs.mkdirSync(path.dirname(destino), { recursive: true });
 fs.writeFileSync(destino, `${JSON.stringify(workflow, null, 2)}\n`);
 console.log(`Workflow generado: ${path.relative(raiz, destino)} (${nodos.length} nodos)`);
 
+// Las mismas clases, para que el panel web valide los formularios con las reglas de src/.
+// Van dentro de una función para no chocar con las variables del panel.
+const destinoPanel = path.join(raiz, 'public', 'clases.js');
+fs.writeFileSync(destinoPanel, [
+  '// Clases copiadas desde src/ por scripts/build-workflow.js — no editar aquí.',
+  'window.ClasesPanel = (() => {',
+  CLASES,
+  '',
+  '  return { REGLAS, ESTADOS, Proveedor, Pago, ComprobanteQR, EvaluadorRiesgo, DiagnosticoProveedor };',
+  '})();',
+  ''
+].join('\n'));
+console.log(`Clases para el panel: ${path.relative(raiz, destinoPanel)}`);
+
 const consulta = require('./workflow-consulta')({ nodo, condicion, codigoNodo, idNodo, respuestaCompleta });
 const destinoConsulta = path.join(raiz, 'n8n', 'workflow-consulta-cedula.json');
 fs.writeFileSync(destinoConsulta, `${JSON.stringify(consulta, null, 2)}\n`);
