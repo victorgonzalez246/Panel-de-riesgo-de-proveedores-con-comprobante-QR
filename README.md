@@ -93,9 +93,10 @@ classDiagram
 │   ├── Pago.js              validación, umbral, vencimiento y cambios de estado
 │   ├── ComprobanteQR.js     código y URL del comprobante QR
 │   ├── EvaluadorRiesgo.js   validar() y evaluar(): las dos decisiones del workflow
-│   └── DiagnosticoProveedor.js  consulta puntual de una cédula (panel web)
+│   ├── DiagnosticoProveedor.js  consulta puntual de una cédula (panel web)
+│   └── ResumenRevision.js   correo de resumen para tesorería (extensión, reto 3)
 ├── main.js                  prueba las clases por consola sin n8n
-├── tests/                   26 pruebas automatizadas (reglas, errores, diagnóstico y POO)
+├── tests/                   30 pruebas automatizadas (reglas, errores, diagnóstico, POO y correo)
 ├── public/index.html        panel web (extra opcional), lo sirve JSON Server
 ├── db.json                  base de datos de JSON Server (local, no se sube a Git)
 ├── data/
@@ -120,7 +121,7 @@ Requisitos: Node.js 22+ y n8n (probado con n8n 2.38.6 local).
 
 ```bash
 npm install
-npm test              # 26 pruebas
+npm test              # 30 pruebas
 node main.js          # métodos de las clases + evaluación de los 10 pagos
 node main.js --en-vivo   # igual, pero consultando Hacienda en este momento
 npm run api:limpio    # reinicia db.json y levanta JSON Server en http://127.0.0.1:3000
@@ -164,6 +165,22 @@ n8n publish:workflow --id=ConsultaCedula01
 
 `db.json` no se sube a Git porque guarda las consultas reales hechas desde el panel. `npm run api` lo crea desde `data/db.inicial.json` si no existe, y `npm run api:limpio` lo reinicia. Enlace directo para la demo: `http://127.0.0.1:3000/?cedula=4000042139`.
 
+## Extensión del laboratorio
+
+| Reto | Estado | Dónde |
+|---|---|---|
+| 1. Jerarquía de clases con herencia y polimorfismo | ✅ | `src/ReglaNegocio.js` (ver *Programación orientada a objetos*), usada también en los nodos Code |
+| 3. Notificación automática por correo | ✅ | `src/ResumenRevision.js` y los nodos **Preparar notificación (POO)** → **¿Hay situaciones críticas?** → **Enviar correo a tesorería** |
+
+Al final de cada revisión se envía **un solo correo** de resumen, y solo si hay pagos retenidos, en revisión manual o con error. Incluye los proveedores morosos destacados en el asunto, el motivo de cada pago y los QR de los aprobados. Como las ramas del workflow llegan a la bitácora por separado, **Preparar notificación (POO)** cuenta las corridas con `$runIndex` y solo arma el correo cuando ya están registrados todos los pagos.
+
+**Activar el correo (Gmail):**
+
+1. En la cuenta de Google, activar la verificación en 2 pasos y crear una **contraseña de aplicación** en https://myaccount.google.com/apppasswords.
+2. En n8n, crear (o editar) la credencial **SMTP** llamada `Gmail SMTP (Panel de riesgo)`: usuario = la cuenta de Gmail, contraseña = la contraseña de aplicación, host `smtp.gmail.com`, puerto `465`, SSL/TLS activado.
+3. En el nodo **Configuración** del workflow, poner `correoRemitente` (la misma cuenta de Gmail) y `correoTesoreria` (quien recibe el resumen). En el repositorio quedan direcciones de ejemplo a propósito.
+
+Si el envío falla, el workflow no se detiene: los pagos ya quedaron registrados y el error se ve en la ejecución del nodo de correo.
 ## Datos de prueba
 
 | Pago | Proveedor | Resultado esperado |

@@ -9,7 +9,7 @@ const path = require('path');
 const crypto = require('crypto');
 
 const raiz = path.join(__dirname, '..');
-const ARCHIVOS_CLASES = ['config.js', 'ReglaNegocio.js', 'Proveedor.js', 'Pago.js', 'ComprobanteQR.js', 'EvaluadorRiesgo.js', 'DiagnosticoProveedor.js'];
+const ARCHIVOS_CLASES = ['config.js', 'ReglaNegocio.js', 'Proveedor.js', 'Pago.js', 'ComprobanteQR.js', 'EvaluadorRiesgo.js', 'DiagnosticoProveedor.js', 'ResumenRevision.js'];
 
 function cargarClases() {
   return ARCHIVOS_CLASES.map((archivo) => {
@@ -72,6 +72,8 @@ const nodos = [
       '**E1** Hacienda 404 · **E2** Hacienda caída · **E3** proveedor inexistente · **E4** datos incompletos',
       '**E5** QR no disponible · **E6** JSON Server caído',
       '',
+      '**Correo:** al final, si hay retenidos, revisiones o errores, se envía un resumen a tesorería (credencial SMTP de Gmail).',
+      '',
       'Demo de error: cambiar `haciendaUrl` en **Configuración** por `https://hacienda-caida.invalid`'
     ].join('\n'),
     height: 300,
@@ -98,7 +100,11 @@ const nodos = [
       assignments: [
         { id: idNodo('cfg-json'), name: 'jsonServerUrl', value: 'http://127.0.0.1:3000', type: 'string' },
         { id: idNodo('cfg-hacienda'), name: 'haciendaUrl', value: 'https://api.hacienda.go.cr/fe/ae', type: 'string' },
-        { id: idNodo('cfg-qr'), name: 'qrServerUrl', value: 'https://api.qrserver.com/v1/create-qr-code/', type: 'string' }
+        { id: idNodo('cfg-qr'), name: 'qrServerUrl', value: 'https://api.qrserver.com/v1/create-qr-code/', type: 'string' },
+        // Reto 3: cambiar por las direcciones reales en n8n (el remitente debe ser la cuenta de Gmail de la credencial)
+        { id: idNodo('cfg-remitente'), name: 'correoRemitente', value: 'panel.riesgo@ejemplo.com', type: 'string' },
+        { id: idNodo('cfg-tesoreria'), name: 'correoTesoreria', value: 'tesoreria@ejemplo.com', type: 'string' },
+        { id: idNodo('cfg-panel'), name: 'panelUrl', value: 'http://127.0.0.1:3000', type: 'string' }
       ]
     },
     options: {}
@@ -204,7 +210,43 @@ const nodos = [
     specifyBody: 'json',
     jsonBody: '={{ JSON.stringify({ pagoId: $json.id, proveedorId: $json.proveedorId, estado: $json.estado, motivo: $json.motivo, prioridad: $json.prioridad, comprobante: $json.comprobante || null, qrUrl: $json.qrUrl || null, fecha: $now.toISO() }) }}',
     options: escrituraSecuencial
-  }, reintentoEscritura)
+  }, reintentoEscritura),
+
+  // Reto 3 (extensión): un solo correo de resumen por revisión, solo si hay situaciones críticas
+  nodo('Preparar notificación (POO)', 'n8n-nodes-base.code', 2, [3300, -80], {
+    jsCode: codigoNodo([
+      '// Este nodo corre una vez por cada rama que termina en la bitácora; solo en la última',
+      '// (cuando ya están registrados todos los pagos) arma el resumen con la clase ResumenRevision.',
+      "const esperados = $('Validar pago y proveedor (POO)').all().filter((i) => i.json.decision !== 'omitido').length;",
+      'let registrados = [];',
+      "for (let corrida = 0; corrida <= $runIndex; corrida++) registrados = registrados.concat($('Registrar en bitácora').all(0, corrida));",
+      'if (registrados.length < esperados) return [];',
+      '',
+      "const config = $('Configuración').first().json;",
+      "const originales = Object.fromEntries($('Separar pagos').all().map((i) => [i.json.id, i.json]));",
+      "const nombres = Object.fromEntries($('Obtener proveedor').all().filter((i) => i.json.body && i.json.body.id).map((i) => [i.json.body.id, i.json.body.nombre]));",
+      'const resumen = new ResumenRevision({ panelUrl: config.panelUrl });',
+      'for (const { json: b } of registrados) resumen.agregar({ ...originales[b.pagoId], ...b, id: b.pagoId }, nombres[b.proveedorId]);',
+      'return [{ json: resumen.aJSON() }];'
+    ].join('\n'))
+  }),
+
+  nodo('¿Hay situaciones críticas?', 'n8n-nodes-base.if', 2.2, [3520, -80],
+    condicion('={{ $json.enviar }}', { type: 'boolean', operation: 'true', singleValue: true })),
+
+  nodo('Enviar correo a tesorería', 'n8n-nodes-base.emailSend', 2.1, [3740, -180], {
+    fromEmail: "={{ $('Configuración').first().json.correoRemitente }}",
+    toEmail: "={{ $('Configuración').first().json.correoTesoreria }}",
+    subject: '={{ $json.asunto }}',
+    emailFormat: 'html',
+    html: '={{ $json.html }}',
+    options: { appendAttribution: false }
+  }, {
+    credentials: { smtp: { id: 'SmtpPanelRiesgo1', name: 'Gmail SMTP (Panel de riesgo)' } },
+    onError: 'continueRegularOutput'
+  }),
+
+  nodo('Sin alertas que enviar', 'n8n-nodes-base.noOp', 1, [3740, 20], {})
 ];
 
 const enlace = (...destinos) => destinos.map((salida) => salida.map((node) => ({ node, type: 'main', index: 0 })));
@@ -226,7 +268,10 @@ const conexiones = {
   'Generar comprobante QR': { main: enlace(['Registrar pago aprobado'], ['QR no disponible']) },
   'QR no disponible': { main: enlace(['Registrar resultado del pago']) },
   'Registrar pago aprobado': { main: enlace(['Registrar en bitácora']) },
-  'Registrar resultado del pago': { main: enlace(['Registrar en bitácora']) }
+  'Registrar resultado del pago': { main: enlace(['Registrar en bitácora']) },
+  'Registrar en bitácora': { main: enlace(['Preparar notificación (POO)']) },
+  'Preparar notificación (POO)': { main: enlace(['¿Hay situaciones críticas?']) },
+  '¿Hay situaciones críticas?': { main: enlace(['Enviar correo a tesorería'], ['Sin alertas que enviar']) }
 };
 
 const workflow = {
