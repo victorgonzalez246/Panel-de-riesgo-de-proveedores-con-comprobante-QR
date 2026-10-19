@@ -10,6 +10,7 @@ const { Proveedor } = require('./src/Proveedor');
 const { Pago } = require('./src/Pago');
 const { ComprobanteQR } = require('./src/ComprobanteQR');
 const { EvaluadorRiesgo } = require('./src/EvaluadorRiesgo');
+const { REGLAS_PREVIAS, REGLAS_TRIBUTARIAS, REGLAS_DE_MONTO } = require('./src/ReglaNegocio');
 
 const HACIENDA_URL = 'https://api.hacienda.go.cr/fe/ae';
 const ARCHIVO_RESPUESTAS = path.join(__dirname, 'data', 'respuestas-hacienda.json');
@@ -97,7 +98,23 @@ async function main() {
   console.log(`\nComprobanteQR.codigo() = ${comprobante.codigo()}`);
   console.log(`ComprobanteQR.contenido():\n  ${comprobante.contenido().split('\n').join('\n  ')}`);
 
-  titulo(`2. Evaluación de todos los pagos de db.json (Hacienda: ${enVivo ? 'EN VIVO' : 'respuestas reales guardadas'})`);
+  titulo('2. Polimorfismo: la misma lista de reglas, evaluar() sobre dos casos distintos');
+
+  ucr.registrarSituacionHacienda((await consultarHacienda(ucr.cedula)).body);
+  const casos = [
+    [`ICE (moroso) + ${pagoNormal.id} ${pagoNormal.montoFormateado()}`, { proveedor: ice, pago: pagoNormal }],
+    [`UCR (al día) + ${pagoGrande.id} ${pagoGrande.montoFormateado()}`, { proveedor: ucr, pago: pagoGrande }]
+  ];
+  for (const [nombre, contexto] of casos) {
+    console.log(`\n${nombre}`);
+    for (const regla of [...REGLAS_PREVIAS(), ...REGLAS_TRIBUTARIAS(), ...REGLAS_DE_MONTO()]) {
+      const padre = Object.getPrototypeOf(regla.constructor).name;
+      const resultado = regla.evaluar(contexto);
+      console.log(`  ${regla.codigo}  ${regla.constructor.name.padEnd(24)} extends ${padre.padEnd(20)} → ${resultado ? resultado.motivo : 'no aplica'}`);
+    }
+  }
+
+  titulo(`3. Evaluación de todos los pagos de db.json (Hacienda: ${enVivo ? 'EN VIVO' : 'respuestas reales guardadas'})`);
 
   const resumen = {};
   for (const datosPago of db.pagos) {
@@ -107,7 +124,7 @@ async function main() {
   }
   console.log('\nResumen:', resumen);
 
-  titulo('3. Situaciones inesperadas simuladas');
+  titulo('4. Situaciones inesperadas simuladas');
 
   const pagoPrueba = db.pagos.find((p) => p.id === 'PAG-001');
 

@@ -1,6 +1,7 @@
 const { Proveedor } = require('./Proveedor');
 const { Pago } = require('./Pago');
 const { ComprobanteQR, QR_BASE_URL } = require('./ComprobanteQR');
+const { REGLAS_PREVIAS, REGLAS_TRIBUTARIAS, REGLAS_DE_MONTO, evaluarReglas } = require('./ReglaNegocio');
 
 // Clasifica una respuesta HTTP. Acepta la forma que entrega n8n con "Full Response"
 // ({ statusCode, body }) o el error que deja "Continue On Fail" ({ error }).
@@ -21,9 +22,18 @@ function clasificarRespuesta(respuesta) {
 //   1. validar(): reglas que no necesitan a Hacienda (antes del HTTP a Hacienda)
 //   2. evaluar(): reglas con la situación tributaria (después del HTTP a Hacienda)
 class EvaluadorRiesgo {
-  constructor({ hoy = new Date(), qrBaseUrl = QR_BASE_URL } = {}) {
+  // Las listas de reglas se pueden reemplazar (por ejemplo en pruebas) sin modificar esta clase
+  constructor({ hoy = new Date(), qrBaseUrl = QR_BASE_URL, reglasPrevias = REGLAS_PREVIAS(), reglasTributarias = REGLAS_TRIBUTARIAS(), reglasDeMonto = REGLAS_DE_MONTO() } = {}) {
     this.hoy = hoy;
     this.qrBaseUrl = qrBaseUrl;
+    this.reglasPrevias = reglasPrevias;
+    this.reglasTributarias = reglasTributarias;
+    this.reglasDeMonto = reglasDeMonto;
+  }
+
+  // Lleva el pago al estado que indica la regla (retenido o revisión manual)
+  #aplicarDecision(pago, decision, motivo) {
+    return decision === 'revision_manual' ? pago.enviarARevision(motivo, this.hoy) : pago.retener(motivo, this.hoy);
   }
 
   // Paso 1. respuestaProveedor = respuesta de GET /proveedores/:id en JSON Server
@@ -53,12 +63,10 @@ class EvaluadorRiesgo {
     const datosProveedor = consulta.body;
     const proveedor = new Proveedor(datosProveedor);
 
-    if (!proveedor.estaActivo()) {
-      const cambios = pago.retener(`[R7] El proveedor ${proveedor.nombre} está inactivo en el registro de la empresa`, this.hoy);
-      return this.#resultado(pago, datosProveedor, cambios.estado, cambios);
-    }
-    if (!proveedor.validarCedula()) {
-      const cambios = pago.retener(`[R6] La cédula "${proveedor.cedula}" no tiene un formato válido; no se consultó a Hacienda`, this.hoy);
+    // R7 y R6: la primera regla previa que se cumpla decide, sin consultar a Hacienda
+    const [previa] = evaluarReglas(this.reglasPrevias, { pago, proveedor });
+    if (previa) {
+      const cambios = this.#aplicarDecision(pago, previa.decision, previa.motivo);
       return this.#resultado(pago, datosProveedor, cambios.estado, cambios);
     }
 
@@ -88,18 +96,15 @@ class EvaluadorRiesgo {
     }
 
     proveedor.registrarSituacionHacienda(consulta.body);
-    const impedimentos = proveedor.impedimentosTributarios();
-    if (impedimentos.length > 0) {
-      const cambios = pago.retener(impedimentos.join('; '), this.hoy);
-      return this.#resultado(pago, datosProveedor, cambios.estado, cambios, null, proveedor.situacion);
-    }
 
-    if (pago.requiereAprobacionManual()) {
-      const cambios = pago.enviarARevision(
-        `[R4] Proveedor al día, pero el monto ${pago.montoFormateado()} supera el umbral de aprobación automática`,
-        this.hoy
-      );
-      return this.#resultado(pago, datosProveedor, cambios.estado, cambios, null, proveedor.situacion);
+    // R1, R2 y R3 se acumulan: el motivo lista todos los impedimentos; luego R4
+    for (const reglas of [this.reglasTributarias, this.reglasDeMonto]) {
+      const cumplidas = evaluarReglas(reglas, { pago, proveedor });
+      if (cumplidas.length > 0) {
+        const motivo = cumplidas.map((r) => r.motivo).join('; ');
+        const cambios = this.#aplicarDecision(pago, cumplidas[0].decision, motivo);
+        return this.#resultado(pago, datosProveedor, cambios.estado, cambios, null, proveedor.situacion);
+      }
     }
 
     const comprobante = new ComprobanteQR(pago, proveedor, { fecha: this.hoy, baseUrl: this.qrBaseUrl });

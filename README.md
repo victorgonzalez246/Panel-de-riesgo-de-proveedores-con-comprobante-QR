@@ -1,25 +1,103 @@
 # Panel de riesgo de proveedores con comprobante QR
 
+[![Pruebas](https://github.com/victorgonzalez246/Panel-de-riesgo-de-proveedores-con-comprobante-QR/actions/workflows/pruebas.yml/badge.svg)](https://github.com/victorgonzalez246/Panel-de-riesgo-de-proveedores-con-comprobante-QR/actions/workflows/pruebas.yml)
+
 Laboratorio #1 — Soluciones de Negocio: POO + n8n (escenario 4).
 
 Antes de aprobar un pago, la empresa verifica que el proveedor no esté moroso ante Hacienda. Un workflow de n8n toma los pagos pendientes de **JSON Server**, consulta la **API de Hacienda** por cada proveedor y, si está al día, genera un **comprobante QR** (api.qrserver.com) y aprueba el pago. Si está moroso, omiso o algo falla, el pago queda retenido o en revisión manual con un motivo claro.
 
 La lógica de negocio está modelada con clases en JavaScript puro (`src/`), y es **exactamente el mismo código** que ejecutan los nodos Code del workflow.
 
+![Recorrido del workflow](docs/diagrama-workflow.png)
+
+## Programación orientada a objetos
+
+Cada regla de negocio es una clase. Todas heredan de `ReglaNegocio`, y `EvaluadorRiesgo` las aplica sin saber cuál es cuál:
+
+```mermaid
+classDiagram
+    class ReglaNegocio {
+        <<abstracta>>
+        +codigo
+        +aplica(contexto)*
+        +motivo(contexto)*
+        +evaluar(contexto)
+    }
+    class ReglaRetencion {
+        <<abstracta>>
+        +decision retenido
+    }
+    class ReglaRevisionManual {
+        <<abstracta>>
+        +decision revision_manual
+    }
+    ReglaNegocio <|-- ReglaRetencion
+    ReglaNegocio <|-- ReglaRevisionManual
+    ReglaRetencion <|-- ReglaMoroso : R1
+    ReglaRetencion <|-- ReglaOmiso : R2
+    ReglaRetencion <|-- ReglaNoInscrito : R3
+    ReglaRetencion <|-- ReglaCedulaInvalida : R6
+    ReglaRetencion <|-- ReglaProveedorInactivo : R7
+    ReglaRevisionManual <|-- ReglaMontoAlto : R4
+
+    class Proveedor {
+        -situacion
+        +validarCedula()
+        +estaMoroso()
+        +impedimentosTributarios()
+        +normalizarCedula()$
+    }
+    class Pago {
+        -cambiarEstado()
+        +esProcesable()
+        +requiereAprobacionManual()
+        +aprobar()
+        +retener()
+        +enviarARevision()
+        +registrarFallaVerificacion()
+    }
+    class ComprobanteQR {
+        +codigo()
+        +contenido()
+        +url()
+    }
+    class EvaluadorRiesgo {
+        +validar(pago, respuestaProveedor)
+        +evaluar(pago, proveedor, respuestaHacienda)
+    }
+    class DiagnosticoProveedor {
+        +puedeConsultar()
+        +conRespuesta(respuestaHacienda)
+    }
+    EvaluadorRiesgo o-- ReglaNegocio : aplica una lista de
+    EvaluadorRiesgo ..> Pago
+    EvaluadorRiesgo ..> Proveedor
+    EvaluadorRiesgo ..> ComprobanteQR
+    DiagnosticoProveedor --> Proveedor
+```
+
+| Pilar | Dónde se aplica |
+|---|---|
+| **Abstracción** | `ReglaNegocio`, `ReglaRetencion` y `ReglaRevisionManual` no se pueden instanciar; definen `aplica()` y `motivo()` que cada regla concreta debe implementar. |
+| **Herencia** | Las 6 reglas heredan de `ReglaRetencion` o `ReglaRevisionManual`, y de ellas reciben su `decision` y el método `evaluar()`. |
+| **Polimorfismo** | `EvaluadorRiesgo` llama `regla.evaluar(contexto)` sobre una lista de reglas; cada subclase responde a su manera. Una regla nueva se agrega sin modificar el evaluador (ver `tests/poo.test.js`). |
+| **Encapsulamiento** | `Pago` solo cambia de estado mediante sus métodos (`#cambiarEstado` es privado), y `Proveedor` guarda la situación tributaria que interpreta él mismo. |
+
 ## Estructura
 
 ```
 ├── src/
 │   ├── config.js            umbrales y estados (parámetros de negocio)
+│   ├── ReglaNegocio.js      jerarquía de reglas R1, R2, R3, R4, R6 y R7
 │   ├── Proveedor.js         cédula, actividad y situación tributaria
 │   ├── Pago.js              validación, umbral, vencimiento y cambios de estado
 │   ├── ComprobanteQR.js     código y URL del comprobante QR
 │   ├── EvaluadorRiesgo.js   validar() y evaluar(): las dos decisiones del workflow
 │   └── DiagnosticoProveedor.js  consulta puntual de una cédula (panel web)
 ├── main.js                  prueba las clases por consola sin n8n
-├── tests/                   20 pruebas automatizadas (R1–R9, E1–E4 y el diagnóstico)
+├── tests/                   26 pruebas automatizadas (reglas, errores, diagnóstico y POO)
 ├── public/index.html        panel web (extra opcional), lo sirve JSON Server
-├── db.json                  base de datos de JSON Server
+├── db.json                  base de datos de JSON Server (local, no se sube a Git)
 ├── data/
 │   ├── db.inicial.json      datos de prueba originales (para reiniciar)
 │   └── respuestas-hacienda.json  respuestas reales de Hacienda guardadas
@@ -32,16 +110,17 @@ La lógica de negocio está modelada con clases en JavaScript puro (`src/`), y e
 └── docs/
     ├── documento-logica-negocio.docx / .pdf
     ├── diagrama-workflow.png
+    ├── img/                 capturas del panel
     └── guion-presentacion.md
 ```
 
 ## Cómo ejecutarlo
 
-Requisitos: Node.js 18+ y n8n (probado con n8n 2.38.6 local).
+Requisitos: Node.js 22+ y n8n (probado con n8n 2.38.6 local).
 
 ```bash
 npm install
-npm test              # 20 pruebas de las reglas
+npm test              # 26 pruebas
 node main.js          # métodos de las clases + evaluación de los 10 pagos
 node main.js --en-vivo   # igual, pero consultando Hacienda en este momento
 npm run api:limpio    # reinicia db.json y levanta JSON Server en http://127.0.0.1:3000
@@ -58,6 +137,10 @@ Si se cambia una clase de `src/`, regenerar los workflows con `npm run build:wor
 > El laboratorio pide una solución "sin interfaz visual". El panel es un **agregado**: no reemplaza ni modifica el workflow principal, y usa las mismas clases.
 
 Panel ejecutivo en **http://127.0.0.1:3000** (lo sirve JSON Server desde `public/`):
+
+![Panel: consulta de cédulas e historial](docs/img/panel-consultas.png)
+
+![Comprobantes de pago aprobados](docs/img/panel-comprobantes.png)
 
 - Indicadores de los pagos: aprobados, retenidos, en revisión manual y por verificar.
 - **Consultar proveedor**: se ingresa una cédula (acepta guiones) y se verifica en tiempo real.

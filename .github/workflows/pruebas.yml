@@ -1,0 +1,31 @@
+name: Pruebas
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Pruebas de las reglas y de POO
+        run: npm test
+
+      - name: main.js (clases sin n8n, con respuestas reales guardadas de Hacienda)
+        run: node main.js
+
+      - name: Los workflows de n8n están al día con las clases de src/
+        run: |
+          npm run build:workflow
+          git diff --exit-code n8n/ || (echo "::error::Los workflows no coinciden con src/. Ejecute npm run build:workflow y suba los cambios." && exit 1)

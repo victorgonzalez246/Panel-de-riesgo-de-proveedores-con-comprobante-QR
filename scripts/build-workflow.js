@@ -9,13 +9,14 @@ const path = require('path');
 const crypto = require('crypto');
 
 const raiz = path.join(__dirname, '..');
-const ARCHIVOS_CLASES = ['config.js', 'Proveedor.js', 'Pago.js', 'ComprobanteQR.js', 'EvaluadorRiesgo.js', 'DiagnosticoProveedor.js'];
+const ARCHIVOS_CLASES = ['config.js', 'ReglaNegocio.js', 'Proveedor.js', 'Pago.js', 'ComprobanteQR.js', 'EvaluadorRiesgo.js', 'DiagnosticoProveedor.js'];
 
 function cargarClases() {
   return ARCHIVOS_CLASES.map((archivo) => {
     const codigo = fs.readFileSync(path.join(raiz, 'src', archivo), 'utf8')
+      .replace(/\r\n/g, '\n') // mismo resultado en Windows (CRLF) y en GitHub Actions (LF)
       .replace(/^const .*= require\(.*\);\r?\n/gm, '')
-      .replace(/^module\.exports = .*;\r?\n?/gm, '')
+      .replace(/^module\.exports = [\s\S]*?;\s*$/m, '')
       .trim();
     return `// ---------- src/${archivo} ----------\n${codigo}`;
   }).join('\n\n');

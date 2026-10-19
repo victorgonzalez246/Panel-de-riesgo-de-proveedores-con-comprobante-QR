@@ -1,4 +1,5 @@
 const { REGLAS } = require('./config');
+const { REGLAS_TRIBUTARIAS, evaluarReglas } = require('./ReglaNegocio');
 
 // Longitudes válidas de identificación según el tipo que usa Hacienda:
 // 01 física, 02 jurídica, 03 DIMEX, 04 NITE
@@ -57,15 +58,10 @@ class Proveedor {
     return this.situacion !== null && REGLAS.estadosHaciendaValidos.includes(this.situacion.estado);
   }
 
-  // Junta R1, R2 y R3: lista vacía significa que el proveedor está al día
+  // Aplica las reglas tributarias R1, R2 y R3 (subclases de ReglaRetencion).
+  // Lista vacía significa que el proveedor está al día.
   impedimentosTributarios() {
-    const impedimentos = [];
-    if (this.estaMoroso()) impedimentos.push('[R1] Proveedor moroso ante Hacienda');
-    if (this.estaOmiso()) impedimentos.push('[R2] Proveedor omiso (declaraciones pendientes)');
-    if (!this.estaInscrito()) {
-      impedimentos.push(`[R3] Situación en Hacienda no válida: "${this.situacion ? this.situacion.estado : 'desconocida'}"`);
-    }
-    return impedimentos;
+    return evaluarReglas(REGLAS_TRIBUTARIAS(), { proveedor: this }).map((resultado) => resultado.motivo);
   }
 }
 
