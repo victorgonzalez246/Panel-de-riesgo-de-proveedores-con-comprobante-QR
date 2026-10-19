@@ -5,7 +5,7 @@
   "main": "main.js",
   "private": true,
   "scripts": {
-    "api": "json-server db.json --host 127.0.0.1 --port 3000",
+    "api": "node scripts/reset-db.js --si-no-existe && json-server db.json --host 127.0.0.1 --port 3000",
     "api:limpio": "node scripts/reset-db.js && json-server db.json --host 127.0.0.1 --port 3000",
     "reset": "node scripts/reset-db.js",
     "demo": "node main.js",

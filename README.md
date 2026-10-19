@@ -62,18 +62,24 @@ Panel ejecutivo en **http://127.0.0.1:3000** (lo sirve JSON Server desde `public
 - Indicadores de los pagos: aprobados, retenidos, en revisión manual y por verificar.
 - **Consultar proveedor**: se ingresa una cédula (acepta guiones) y se verifica en tiempo real.
 - **Consultas anteriores**: el historial guardado en `/consultas`, con fecha y hora de Costa Rica y un filtro.
-- Tabla de pagos con su estado y enlace al comprobante QR.
+- **Comprobantes de pago aprobados**: tarjetas con la imagen del QR de cada pago aprobado, para abrirlo o descargarlo.
+- **Ejecutar revisión de pagos**: botón que dispara el workflow principal (`POST /webhook/revision-pagos`) y va mostrando el avance hasta que termina.
+- Tabla de pagos con su estado, motivo y enlace al comprobante QR.
 
 La consulta pasa por n8n. El panel hace `POST http://localhost:5678/webhook/consulta-cedula`; el workflow **Consulta de cédula (panel)** valida la cédula con `DiagnosticoProveedor` (R6), consulta Hacienda, interpreta la respuesta (R1, R2, R3, E1, E2), guarda la consulta en JSON Server y le responde al panel.
 
-Para que el webhook responda, ese workflow debe estar **publicado**:
+Para que los webhooks respondan, los dos workflows deben estar **publicados** (con n8n detenido; luego `n8n start`):
 
 ```bash
+n8n import:workflow --input=n8n/workflow-panel-riesgo.json
 n8n import:workflow --input=n8n/workflow-consulta-cedula.json
-n8n publish:workflow --id=ConsultaCedula01   # con n8n detenido; luego n8n start
+n8n publish:workflow --id=PanelRiesgoQR001
+n8n publish:workflow --id=ConsultaCedula01
 ```
 
-(o abrirlo en n8n y pulsar **Publish**). Enlace directo para la demo: `http://127.0.0.1:3000/?cedula=4000042139`.
+(o abrir cada uno en n8n y pulsar **Publish**). Al publicar el workflow principal también queda activa la revisión automática diaria de las 7:00, mientras n8n esté abierto.
+
+`db.json` no se sube a Git porque guarda las consultas reales hechas desde el panel. `npm run api` lo crea desde `data/db.inicial.json` si no existe, y `npm run api:limpio` lo reinicia. Enlace directo para la demo: `http://127.0.0.1:3000/?cedula=4000042139`.
 
 ## Datos de prueba
 

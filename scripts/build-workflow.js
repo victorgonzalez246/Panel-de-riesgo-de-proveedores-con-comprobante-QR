@@ -84,6 +84,14 @@ const nodos = [
     rule: { interval: [{ field: 'days', triggerAtHour: 7 }] }
   }),
 
+  // Lo usa el botón "Ejecutar revisión de pagos" del panel web; responde de inmediato
+  nodo('Webhook: ejecutar revisión', 'n8n-nodes-base.webhook', 2, [0, 400], {
+    httpMethod: 'POST',
+    path: 'revision-pagos',
+    responseMode: 'onReceived',
+    options: { allowedOrigins: '*' }
+  }, { webhookId: 'a3f9c2d1-7b4e-4c8a-9e21-5d6f7a8b9c01' }),
+
   nodo('Configuración', 'n8n-nodes-base.set', 3.4, [220, 100], {
     assignments: {
       assignments: [
@@ -203,6 +211,7 @@ const enlace = (...destinos) => destinos.map((salida) => salida.map((node) => ({
 const conexiones = {
   'Ejecutar manualmente': { main: enlace(['Configuración']) },
   'Revisión diaria 7:00': { main: enlace(['Configuración']) },
+  'Webhook: ejecutar revisión': { main: enlace(['Configuración']) },
   'Configuración': { main: enlace(['Obtener pagos por revisar']) },
   'Obtener pagos por revisar': { main: enlace(['¿Hay pagos por revisar?'], ['JSON Server no disponible']) },
   '¿Hay pagos por revisar?': { main: enlace(['Separar pagos'], ['Sin pagos por revisar']) },

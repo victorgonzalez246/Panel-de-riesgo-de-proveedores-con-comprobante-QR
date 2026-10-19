@@ -75,6 +75,27 @@
   a.qr { color: var(--marca-2); font-weight: 600; text-decoration: none; } a.qr:hover { text-decoration: underline; }
   .alerta { background: var(--aviso-bg); color: #7c2d12; border: 1px solid #fde68a; border-radius: 10px; padding: 10px 14px; margin-bottom: 16px; font-size: 13px; display: none; }
   .tabla-scroll { overflow-x: auto; }
+  .pestanas { display: inline-flex; background: var(--gris-bg); border-radius: 8px; padding: 3px; gap: 2px; }
+  .pestanas button { background: transparent; color: var(--suave); padding: 5px 12px; font-size: 12.5px; border-radius: 6px; }
+  .pestanas button.activa { background: #fff; color: var(--texto); box-shadow: 0 1px 2px rgba(15,23,42,.12); }
+  .pestanas button:hover { background: #fff; }
+  .controles { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .comprobantes { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+  .comprobante { border: 1px solid var(--borde); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; align-items: center; text-align: center; background: linear-gradient(#fff, #f8fafc); }
+  .comprobante img { width: 150px; height: 150px; image-rendering: pixelated; border: 6px solid #fff; border-radius: 6px; box-shadow: 0 0 0 1px var(--borde); background: #fff; }
+  .comprobante .codigo { font-family: Consolas, monospace; font-size: 12px; color: var(--marca-2); margin-top: 10px; font-weight: 600; }
+  .comprobante .prov { font-weight: 600; margin-top: 4px; line-height: 1.3; }
+  .comprobante .monto-grande { font-size: 18px; font-weight: 700; margin: 4px 0; font-variant-numeric: tabular-nums; }
+  .comprobante .meta { font-size: 12px; color: var(--suave); }
+  .comprobante .acciones { margin-top: 10px; display: flex; gap: 12px; font-size: 12.5px; }
+  .progreso { font-size: 12.5px; color: var(--suave); display: none; align-items: center; gap: 8px; }
+  .progreso.visible { display: inline-flex; }
+  .progreso.listo .girando { animation: none; border-color: var(--ok); background: var(--ok); }
+  td.mono { white-space: nowrap; }
+  .girando { width: 14px; height: 14px; border: 2px solid #cbd5e1; border-top-color: var(--marca-2); border-radius: 50%; animation: girar .8s linear infinite; }
+  @keyframes girar { to { transform: rotate(360deg); } }
+  button.secundario { background: #fff; color: var(--marca-2); border: 1px solid #bfdbfe; }
+  button.secundario:hover { background: #eff6ff; }
   footer { text-align: center; color: var(--suave); font-size: 12px; padding-bottom: 24px; }
   @media (max-width: 1000px) { .rejilla { grid-template-columns: minmax(0, 1fr); } .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   @media (max-width: 560px) { header { padding: 16px; } main { padding: 16px; } .cabecera-der { margin-left: 0; text-align: left; } .estados { justify-content: flex-start; } form { flex-direction: column; } }
@@ -134,7 +155,14 @@
           <h2>Consultas anteriores</h2>
           <p class="sub" style="margin:0">Historial guardado en JSON Server · hora local de Costa Rica</p>
         </div>
-        <input type="search" id="filtro" placeholder="Filtrar por cédula o nombre">
+        <div class="controles">
+          <div class="pestanas" id="pestanas">
+            <button type="button" class="activa" data-f="todas">Todas</button>
+            <button type="button" data-f="aptas">Aptas</button>
+            <button type="button" data-f="no_aptas">No aptas</button>
+          </div>
+          <input type="search" id="filtro" placeholder="Filtrar por cédula o nombre">
+        </div>
       </div>
       <div class="tabla-scroll">
         <table>
@@ -148,8 +176,22 @@
   <section class="tarjeta">
     <div class="barra">
       <div>
+        <h2>Comprobantes de pago aprobados</h2>
+        <p class="sub" style="margin:0">QR generado por el workflow al aprobar cada pago · escanéelo para ver los datos</p>
+      </div>
+    </div>
+    <div class="comprobantes" id="comprobantes"><div class="vacio">Cargando…</div></div>
+  </section>
+
+  <section class="tarjeta">
+    <div class="barra">
+      <div>
         <h2>Pagos a proveedores</h2>
-        <p class="sub" style="margin:0">Resultado de la revisión automática del workflow diario</p>
+        <p class="sub" style="margin:0">Resultado de la revisión automática del workflow (diaria a las 7:00 o desde este botón)</p>
+      </div>
+      <div class="controles">
+        <span class="progreso" id="progreso"><span class="girando"></span><span id="progreso-texto">Revisando…</span></span>
+        <button type="button" id="btn-revision">Ejecutar revisión de pagos</button>
       </div>
     </div>
     <div class="tabla-scroll">
@@ -165,6 +207,7 @@
 <script>
   const API = location.protocol.startsWith('http') ? location.origin : 'http://127.0.0.1:3000';
   const WEBHOOK = 'http://localhost:5678/webhook/consulta-cedula';
+  const WEBHOOK_REVISION = 'http://localhost:5678/webhook/revision-pagos';
   const ZONA = 'America/Costa_Rica';
 
   const RESULTADOS = {
@@ -202,14 +245,20 @@
   }
 
   let consultas = [];
+  let pestana = 'todas';
+  let ultimosPagos = [];
+  let revisando = false;
 
   async function cargarDatos() {
     try {
       const [pagos, hist, proveedores] = await Promise.all([obtener('/pagos'), obtener('/consultas'), obtener('/proveedores')]);
       $('st-api').className = 'punto on';
       consultas = hist.sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
+      ultimosPagos = pagos;
       pintarKpis(pagos);
+      pintarComprobantes(pagos, proveedores);
       pintarPagos(pagos, proveedores);
+      actualizarBotonRevision();
       pintarHistorial();
       if ($('alerta').dataset.tipo === 'api') alerta('');
     } catch (e) {
@@ -247,9 +296,70 @@
       </tr>`).join('') || '<tr><td colspan="7" class="vacio">Sin pagos registrados</td></tr>';
   }
 
+  function pintarComprobantes(pagos, proveedores) {
+    const nombre = (id) => (proveedores.find((p) => p.id === id) || {}).nombre || id;
+    const aprobados = pagos.filter((p) => p.estado === 'aprobado' && p.qrUrl)
+      .sort((a, b) => (b.fechaRevision || '').localeCompare(a.fechaRevision || ''));
+    $('comprobantes').innerHTML = aprobados.map((p) => `
+      <div class="comprobante">
+        <a href="${esc(p.qrUrl)}" target="_blank" rel="noopener" title="Abrir el QR en tamaño completo"><img src="${esc(p.qrUrl)}" alt="QR del comprobante ${esc(p.comprobante)}" loading="lazy"></a>
+        <div class="codigo">${esc(p.comprobante)}</div>
+        <div class="prov">${esc(nombre(p.proveedorId))}</div>
+        <div class="monto-grande">${monto(p.monto, p.moneda)}</div>
+        <div class="meta">${esc(p.concepto)}</div>
+        <div class="meta">Aprobado el ${horaLocal(p.fechaRevision)}</div>
+        ${p.prioridad === 'alta' ? '<div style="margin-top:6px"><span class="etiqueta e-error_verificacion">Prioridad alta · vencido</span></div>' : ''}
+        <div class="acciones"><a class="qr" href="${esc(p.qrUrl)}" target="_blank" rel="noopener">Abrir QR</a><a class="qr" href="${esc(p.qrUrl.replace('size=250x250', 'size=600x600'))}" download="${esc(p.comprobante)}.png" target="_blank" rel="noopener">Descargar</a></div>
+      </div>`).join('') || `<div class="vacio" style="grid-column:1/-1">Todavía no hay comprobantes. Pulse <b>Ejecutar revisión de pagos</b> para que el workflow apruebe los pagos de proveedores al día y genere sus QR.</div>`;
+  }
+
+  function actualizarBotonRevision() {
+    if (revisando) return;
+    const porRevisar = ultimosPagos.filter((p) => p.estado === 'pendiente' || p.estado === 'error_verificacion').length;
+    $('btn-revision').disabled = porRevisar === 0;
+    $('btn-revision').textContent = porRevisar ? `Ejecutar revisión de pagos (${porRevisar})` : 'Sin pagos por revisar';
+  }
+
+  async function ejecutarRevision() {
+    const porRevisar = ultimosPagos.filter((p) => p.estado === 'pendiente' || p.estado === 'error_verificacion').length;
+    if (!porRevisar || revisando) return;
+    revisando = true;
+    $('btn-revision').disabled = true;
+    $('progreso').className = 'progreso visible';
+    $('progreso-texto').textContent = 'Iniciando el workflow en n8n…';
+    try {
+      const antes = (await obtener('/bitacora')).length;
+      const llamar = () => fetch(WEBHOOK_REVISION, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ origen: 'panel' }) });
+      let r = await llamar().catch(() => null);
+      if (!r || r.status >= 500) { await new Promise((ok) => setTimeout(ok, 2000)); r = await llamar(); }
+      if (!r.ok) throw new Error('n8n respondió HTTP ' + r.status);
+      $('st-n8n').className = 'punto on';
+      // El workflow escribe un registro en la bitácora por cada pago: se espera hasta tenerlos todos
+      const limite = Date.now() + 90000;
+      while (Date.now() < limite) {
+        await new Promise((ok) => setTimeout(ok, 2000));
+        const hechos = (await obtener('/bitacora')).length - antes;
+        $('progreso-texto').textContent = `Consultando Hacienda… ${Math.min(hechos, porRevisar)} de ${porRevisar} pagos revisados`;
+        await cargarDatos();
+        if (hechos >= porRevisar) break;
+      }
+      $('progreso-texto').textContent = 'Revisión terminada';
+      $('progreso').className = 'progreso visible listo';
+    } catch (e) {
+      $('st-n8n').className = 'punto off';
+      alerta('<b>No se pudo ejecutar la revisión.</b> Verifique que n8n esté abierto y que el workflow "Panel de riesgo de proveedores con comprobante QR" esté publicado. (' + esc(e.message) + ')');
+    } finally {
+      revisando = false;
+      setTimeout(() => { $('progreso').className = 'progreso'; }, 4000);
+      await cargarDatos();
+    }
+  }
+
   function pintarHistorial() {
     const filtro = $('filtro').value.trim().toLowerCase();
-    const filas = consultas.filter((c) => !filtro || (c.cedula || '').includes(filtro.replace(/[\s.-]/g, '')) || (c.nombre || '').toLowerCase().includes(filtro));
+    const filas = consultas
+      .filter((c) => pestana === 'todas' || (pestana === 'aptas' ? c.apto : !c.apto))
+      .filter((c) => !filtro || (c.cedula || '').includes(filtro.replace(/[\s.-]/g, '')) || (c.nombre || '').toLowerCase().includes(filtro));
     $('historial').innerHTML = filas.map((c) => `
       <tr>
         <td class="hora-col">${horaLocal(c.fecha)}</td>
@@ -308,6 +418,12 @@
   $('form').addEventListener('submit', (e) => { e.preventDefault(); const c = $('cedula').value.trim(); if (c) consultar(c); });
   document.querySelectorAll('.chip').forEach((chip) => chip.addEventListener('click', () => { $('cedula').value = chip.dataset.c; consultar(chip.dataset.c); }));
   $('filtro').addEventListener('input', pintarHistorial);
+  $('btn-revision').addEventListener('click', ejecutarRevision);
+  document.querySelectorAll('#pestanas button').forEach((b) => b.addEventListener('click', () => {
+    pestana = b.dataset.f;
+    document.querySelectorAll('#pestanas button').forEach((x) => x.classList.toggle('activa', x === b));
+    pintarHistorial();
+  }));
 
   // Enlace directo: http://127.0.0.1:3000/?cedula=4000042149 consulta al abrir
   const cedulaUrl = new URLSearchParams(location.search).get('cedula');

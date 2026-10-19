@@ -53,7 +53,8 @@ Solo si sobra tiempo, y presentándolo como un agregado (el laboratorio pide "si
 1. Abrir http://127.0.0.1:3000 y mostrar los indicadores, que se actualizan con lo que hizo el workflow.
 2. Consultar `4-000-042139` (ICE): **No apto**, moroso. Luego `4000042149` (UCR): **Apto**.
 3. Mostrar que la consulta pasó por n8n: en *Executions* del workflow **Consulta de cédula (panel)** aparece cada consulta, con los nodos Code que usan la clase `DiagnosticoProveedor`.
-4. Mostrar el historial con la hora local de Costa Rica.
+4. Mostrar el historial con la hora local de Costa Rica y las pestañas *Aptas / No aptas*.
+5. Con pagos pendientes (`npm run api:limpio`), pulsar **Ejecutar revisión de pagos**: en unos 15 s aparecen los comprobantes con su QR. Escanear uno con el celular.
 
 ## 5. Conclusiones (1 min)
 

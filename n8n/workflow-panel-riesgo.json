@@ -51,6 +51,25 @@
     },
     {
       "parameters": {
+        "httpMethod": "POST",
+        "path": "revision-pagos",
+        "responseMode": "onReceived",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "886990bc-e979-8ecf-7180-b79a5211017b",
+      "name": "Webhook: ejecutar revisión",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        400
+      ],
+      "webhookId": "a3f9c2d1-7b4e-4c8a-9e21-5d6f7a8b9c01"
+    },
+    {
+      "parameters": {
         "assignments": {
           "assignments": [
             {
@@ -509,6 +528,17 @@
       ]
     },
     "Revisión diaria 7:00": {
+      "main": [
+        [
+          {
+            "node": "Configuración",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook: ejecutar revisión": {
       "main": [
         [
           {
