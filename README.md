@@ -94,9 +94,10 @@ classDiagram
 │   ├── ComprobanteQR.js     código y URL del comprobante QR
 │   ├── EvaluadorRiesgo.js   validar() y evaluar(): las dos decisiones del workflow
 │   ├── DiagnosticoProveedor.js  consulta puntual de una cédula (panel web)
+│   ├── HistorialTendencia.js    tendencia del riesgo entre revisiones (extensión, reto 4)
 │   └── ResumenRevision.js   correo de resumen para tesorería (extensión, reto 3)
 ├── main.js                  prueba las clases por consola sin n8n
-├── tests/                   30 pruebas automatizadas (reglas, errores, diagnóstico, POO y correo)
+├── tests/                   35 pruebas automatizadas (reglas, errores, diagnóstico, POO, correo y tendencia)
 ├── public/                  panel web (extra opcional), lo sirve JSON Server
 │   ├── index.html
 │   └── clases.js            copia de src/ generada para validar los formularios
@@ -124,7 +125,7 @@ Requisitos: Node.js 22+ y n8n (probado con n8n 2.38.6 local).
 
 ```bash
 npm install
-npm test              # 30 pruebas
+npm test              # 35 pruebas
 node main.js          # métodos de las clases + evaluación de los 10 pagos
 node main.js --en-vivo   # igual, pero consultando Hacienda en este momento
 npm run api:limpio    # reinicia db.json y levanta JSON Server en http://127.0.0.1:3000
@@ -185,6 +186,9 @@ n8n publish:workflow --id=ConsultaCedula01
 |---|---|---|
 | 1. Jerarquía de clases con herencia y polimorfismo | ✅ | `src/ReglaNegocio.js` (ver *Programación orientada a objetos*), usada también en los nodos Code |
 | 3. Notificación automática por correo | ✅ | `src/ResumenRevision.js` y los nodos **Preparar notificación (POO)** → **¿Hay situaciones críticas?** → **Enviar correo a tesorería** |
+| 4. Historial y tendencia | ✅ | `src/HistorialTendencia.js`, el nodo **Obtener historial de revisiones** (lee las últimas 5 de `/revisiones`) y **Preparar notificación (POO)**, que calcula la tendencia |
+
+**Tendencia (reto 4):** el índice de riesgo de una revisión es la proporción de pagos detenidos o en revisión manual. Se compara con el promedio de las revisiones anteriores: *empeorando* o *mejorando* si cambia más de 10 puntos, *estable* si no, y *sin historial* la primera vez. Aparece en el correo, se guarda en cada revisión y el panel la muestra en *Inicio* y *Avisos por correo*.
 
 Al final de cada revisión se envía **un solo correo** de resumen, y solo si hay pagos retenidos, en revisión manual o con error. Incluye los proveedores morosos destacados en el asunto, el motivo de cada pago y los QR de los aprobados. Como las ramas del workflow llegan a la bitácora por separado, **Preparar notificación (POO)** cuenta las corridas con `$runIndex` y solo arma el correo cuando ya están registrados todos los pagos.
 

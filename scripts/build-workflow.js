@@ -9,7 +9,7 @@ const path = require('path');
 const crypto = require('crypto');
 
 const raiz = path.join(__dirname, '..');
-const ARCHIVOS_CLASES = ['config.js', 'ReglaNegocio.js', 'Proveedor.js', 'Pago.js', 'ComprobanteQR.js', 'EvaluadorRiesgo.js', 'DiagnosticoProveedor.js', 'ResumenRevision.js'];
+const ARCHIVOS_CLASES = ['config.js', 'ReglaNegocio.js', 'Proveedor.js', 'Pago.js', 'ComprobanteQR.js', 'EvaluadorRiesgo.js', 'DiagnosticoProveedor.js', 'HistorialTendencia.js', 'ResumenRevision.js'];
 
 function cargarClases() {
   return ARCHIVOS_CLASES.map((archivo) => {
@@ -109,6 +109,12 @@ const nodos = [
     },
     options: {}
   }),
+
+  // Reto 4: últimas revisiones, para calcular la tendencia al final (si falla, la revisión sigue igual)
+  nodo('Obtener historial de revisiones', 'n8n-nodes-base.httpRequest', 4.2, [220, 300], {
+    url: `=${URL_JSON_SERVER}/revisiones?_sort=fecha&_order=desc&_limit=5`,
+    options: { response: { response: { fullResponse: true, neverError: true } }, timeout: 10000 }
+  }, { onError: 'continueRegularOutput' }),
 
   nodo('Obtener pagos por revisar', 'n8n-nodes-base.httpRequest', 4.2, [440, 100], {
     url: `=${URL_JSON_SERVER}/pagos?estado=pendiente&estado=error_verificacion`,
@@ -227,6 +233,10 @@ const nodos = [
       "const nombres = Object.fromEntries($('Obtener proveedor').all().filter((i) => i.json.body && i.json.body.id).map((i) => [i.json.body.id, i.json.body.nombre]));",
       'const resumen = new ResumenRevision({ panelUrl: config.panelUrl });',
       'for (const { json: b } of registrados) resumen.agregar({ ...originales[b.pagoId], ...b, id: b.pagoId }, nombres[b.proveedorId]);',
+      '',
+      '// Reto 4: tendencia del riesgo frente a las revisiones anteriores (leídas al inicio del workflow)',
+      "const historial = $('Obtener historial de revisiones').first().json.body;",
+      'resumen.tendencia = new HistorialTendencia(Array.isArray(historial) ? historial : []).analizar(resumen.totales());',
       'return [{ json: resumen.aJSON() }];'
     ].join('\n'))
   }),
@@ -254,7 +264,7 @@ const nodos = [
     url: `=${URL_JSON_SERVER}/revisiones`,
     sendBody: true,
     specifyBody: 'json',
-    jsonBody: "={{ JSON.stringify({ fecha: $now.toISO(), revisados: $('Preparar notificación (POO)').first().json.revisados, totales: $('Preparar notificación (POO)').first().json.totales, asunto: $('Preparar notificación (POO)').first().json.asunto, correoNecesario: $('Preparar notificación (POO)').first().json.enviar, correoEnviado: $('Preparar notificación (POO)').first().json.enviar && !$json.error, correoError: $json.error ? ($json.error.message || 'error al enviar') : null }) }}",
+    jsonBody: "={{ JSON.stringify({ fecha: $now.toISO(), revisados: $('Preparar notificación (POO)').first().json.revisados, totales: $('Preparar notificación (POO)').first().json.totales, asunto: $('Preparar notificación (POO)').first().json.asunto, correoNecesario: $('Preparar notificación (POO)').first().json.enviar, correoEnviado: $('Preparar notificación (POO)').first().json.enviar && !$json.error, correoError: $json.error ? ($json.error.message || 'error al enviar') : null, tendencia: $('Preparar notificación (POO)').first().json.tendencia }) }}",
     options: { timeout: 10000 }
   }, { onError: 'continueRegularOutput' })
 ];
@@ -265,7 +275,8 @@ const conexiones = {
   'Ejecutar manualmente': { main: enlace(['Configuración']) },
   'Revisión diaria 7:00': { main: enlace(['Configuración']) },
   'Webhook: ejecutar revisión': { main: enlace(['Configuración']) },
-  'Configuración': { main: enlace(['Obtener pagos por revisar']) },
+  'Configuración': { main: enlace(['Obtener historial de revisiones']) },
+  'Obtener historial de revisiones': { main: enlace(['Obtener pagos por revisar']) },
   'Obtener pagos por revisar': { main: enlace(['¿Hay pagos por revisar?'], ['JSON Server no disponible']) },
   '¿Hay pagos por revisar?': { main: enlace(['Separar pagos'], ['Sin pagos por revisar']) },
   'Separar pagos': { main: enlace(['Obtener proveedor']) },
@@ -310,7 +321,7 @@ fs.writeFileSync(destinoPanel, [
   'window.ClasesPanel = (() => {',
   CLASES,
   '',
-  '  return { REGLAS, ESTADOS, Proveedor, Pago, ComprobanteQR, EvaluadorRiesgo, DiagnosticoProveedor };',
+  '  return { REGLAS, ESTADOS, Proveedor, Pago, ComprobanteQR, EvaluadorRiesgo, DiagnosticoProveedor, HistorialTendencia };',
   '})();',
   ''
 ].join('\n'));

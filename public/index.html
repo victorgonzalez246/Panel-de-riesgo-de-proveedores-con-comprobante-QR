@@ -172,6 +172,13 @@
   /* Paso 4 */
   .correo-estado { display: flex; gap: 14px; align-items: flex-start; border-radius: 12px; padding: 14px 16px; margin-bottom: 14px; border: 1px solid var(--borde); background: #f8fafc; }
   .correo-estado .icono { font-size: 24px; line-height: 1; }
+  .tendencia { display: flex; gap: 14px; align-items: center; border-radius: 12px; padding: 14px 16px; margin-bottom: 14px; border: 1px solid var(--borde); background: #f8fafc; }
+  .tendencia .ms { font-size: 34px; vertical-align: 0; }
+  .tendencia.empeorando { background: #fff7ed; border-color: #fed7aa; } .tendencia.empeorando .ms, .tendencia.empeorando b { color: #c2410c; }
+  .tendencia.mejorando { background: var(--ok-bg); border-color: #a7f3d0; } .tendencia.mejorando .ms, .tendencia.mejorando b { color: var(--ok); }
+  .tendencia.estable .ms, .tendencia.sin_historial .ms { color: var(--suave); }
+  .tendencia .indice { margin-left: auto; text-align: right; font-size: 12px; color: var(--suave); white-space: nowrap; }
+  .tendencia .indice strong { display: block; font-size: 24px; color: var(--texto); }
 
   /* Formularios de registro */
   .formulario { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 16px; }
@@ -292,6 +299,11 @@
         <span class="estado" id="guia4-estado">—</span>
       </a>
     </div>
+  </section>
+  <section class="tarjeta">
+    <h2>¿Cómo va el riesgo de los proveedores?</h2>
+    <p class="sub">Compara la última revisión con las anteriores: qué parte de los pagos quedó detenida o en revisión.</p>
+    <div id="tendencia-inicio"></div>
   </section>
   <section class="tarjeta">
     <h2>¿Primera vez aquí?</h2>
@@ -476,10 +488,11 @@
   <section class="tarjeta vista" id="paso4">
     <div class="seccion-titulo"><span class="num"><span class="ms" aria-hidden="true">mail</span></span><h2>Avisos por correo a tesorería</h2></div>
     <p class="sub">Después de cada revisión, si hay pagos detenidos o que necesitan aprobación, se envía un correo con el resumen. Si todo sale aprobado, no se envía nada.</p>
+    <div id="tendencia-correo"></div>
     <div class="correo-estado" id="correo-estado"><span class="icono"><span class="ms" aria-hidden="true">mail</span></span><div>Cargando…</div></div>
     <div class="tabla-scroll">
       <table>
-        <thead><tr><th>Revisión</th><th>Resultado</th><th>Correo</th></tr></thead>
+        <thead><tr><th>Revisión</th><th>Resultado</th><th>Tendencia</th><th>Correo</th></tr></thead>
         <tbody id="revisiones"><tr><td colspan="3" class="vacio">Cargando…</td></tr></tbody>
       </table>
     </div>
@@ -632,6 +645,7 @@
     pintarPagos();
     pintarComprobantes();
     pintarCorreo();
+    pintarTendencia();
     pintarProveedores();
   }
 
@@ -852,6 +866,29 @@
       </div>`).join('') || `<div class="vacio" style="grid-column:1/-1">Todavía no hay comprobantes. Aparecen aquí cuando <a class="enlace" href="#paso2">Revisar pagos</a> aprueba un pago.</div>`;
   }
 
+  // ---------- Tendencia del riesgo (reto 4: clase HistorialTendencia en el workflow) ----------
+  const TENDENCIA = {
+    empeorando: { icono: 'trending_up', clase: 'e-rojo', texto: 'Empeorando' },
+    mejorando: { icono: 'trending_down', clase: 'e-verde', texto: 'Mejorando' },
+    estable: { icono: 'trending_flat', clase: 'e-gris', texto: 'Estable' },
+    sin_historial: { icono: 'insights', clase: 'e-gris', texto: 'Sin historial' }
+  };
+  const etiquetaTendencia = (t) => t && TENDENCIA[t.tendencia]
+    ? `<span class="etiqueta ${TENDENCIA[t.tendencia].clase}">${ic(TENDENCIA[t.tendencia].icono)} ${TENDENCIA[t.tendencia].texto}</span>` : '—';
+  function pintarTendencia() {
+    const ultima = datos.revisiones.find((r) => r.tendencia);
+    const html = !ultima
+      ? `<div class="tendencia sin_historial">${ic('insights')}<div><b>Todavía no hay tendencia</b><div class="detalle">Aparece después de revisar los pagos; con dos o más revisiones se puede comparar.</div></div></div>`
+      : (() => {
+          const t = ultima.tendencia;
+          const info = TENDENCIA[t.tendencia] || TENDENCIA.estable;
+          const indice = t.indiceActual == null ? '' : `<div class="indice"><strong>${Math.round(t.indiceActual * 100)} %</strong>con problemas</div>`;
+          return `<div class="tendencia ${esc(t.tendencia)}">${ic(info.icono)}<div><b>${esc(info.texto)}</b><div class="detalle">${esc(t.mensaje)} Revisión del ${horaLocal(ultima.fecha)}</div></div>${indice}</div>`;
+        })();
+    $('tendencia-inicio').innerHTML = html;
+    $('tendencia-correo').innerHTML = html;
+  }
+
   // ---------- Paso 4: correo ----------
   function pintarCorreo() {
     const ultima = datos.revisiones[0];
@@ -872,8 +909,8 @@
     $('revisiones').innerHTML = datos.revisiones.slice(0, 8).map((r) => {
       const t = r.totales || {};
       const correo = r.correoEnviado ? '<span class="etiqueta e-verde">Enviado</span>' : r.correoNecesario ? '<span class="etiqueta e-rojo">Falló</span>' : '<span class="etiqueta e-gris">No hizo falta</span>';
-      return `<tr><td class="nowrap">${horaLocal(r.fecha)}</td><td>${t.aprobado || 0} aprobados · ${t.retenido || 0} detenidos · ${t.revision_manual || 0} por aprobar${t.error_verificacion ? ` · ${t.error_verificacion} se reintentarán` : ''}</td><td>${correo}</td></tr>`;
-    }).join('') || '<tr><td colspan="3" class="vacio">Sin revisiones todavía.</td></tr>';
+      return `<tr><td class="nowrap">${horaLocal(r.fecha)}</td><td>${t.aprobado || 0} aprobados · ${t.retenido || 0} detenidos · ${t.revision_manual || 0} por aprobar${t.error_verificacion ? ` · ${t.error_verificacion} se reintentarán` : ''}</td><td>${etiquetaTendencia(r.tendencia)}</td><td>${correo}</td></tr>`;
+    }).join('') || '<tr><td colspan="4" class="vacio">Sin revisiones todavía.</td></tr>';
   }
 
   // ---------- Registro de pagos y proveedores (validan con las clases de src/, ver clases.js) ----------

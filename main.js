@@ -11,6 +11,7 @@ const { Pago } = require('./src/Pago');
 const { ComprobanteQR } = require('./src/ComprobanteQR');
 const { EvaluadorRiesgo } = require('./src/EvaluadorRiesgo');
 const { REGLAS_PREVIAS, REGLAS_TRIBUTARIAS, REGLAS_DE_MONTO } = require('./src/ReglaNegocio');
+const { HistorialTendencia } = require('./src/HistorialTendencia');
 
 const HACIENDA_URL = 'https://api.hacienda.go.cr/fe/ae';
 const ARCHIVO_RESPUESTAS = path.join(__dirname, 'data', 'respuestas-hacienda.json');
@@ -142,6 +143,21 @@ async function main() {
     statusCode: 200,
     body: { nombre: 'UNIVERSIDAD DE COSTA RICA', situacion: { moroso: 'NO', omiso: 'SI', estado: 'Desinscrito' } }
   }));
+
+  titulo('5. Tendencia del riesgo (HistorialTendencia, reto 4 de la extensión)');
+
+  const historial = [
+    { fecha: '2026-10-15T13:00:00Z', totales: { aprobado: 8, retenido: 1, revision_manual: 1 } },
+    { fecha: '2026-10-16T13:00:00Z', totales: { aprobado: 9, retenido: 1 } }
+  ];
+  const totalesHoy = resumen.aprobado !== undefined
+    ? { aprobado: resumen.aprobado || 0, retenido: resumen.retenido || 0, revision_manual: resumen.revision_manual || 0 }
+    : {};
+  console.log(`Revisiones anteriores: ${historial.map((r) => `${r.fecha.slice(0, 10)} → ${Math.round(HistorialTendencia.indiceRiesgo(r.totales) * 100)} %`).join(', ')}`);
+  console.log(`Revisión de hoy: ${JSON.stringify(totalesHoy)} → ${Math.round(HistorialTendencia.indiceRiesgo(totalesHoy) * 100)} %`);
+  const tendencia = new HistorialTendencia(historial).analizar(totalesHoy);
+  console.log(`${tendencia.etiqueta.toUpperCase()}: ${tendencia.mensaje}`);
+  console.log(`Sin historial: ${new HistorialTendencia([]).analizar(totalesHoy).mensaje}`);
 
   if (enVivo && guardar) {
     const respuestas = {};

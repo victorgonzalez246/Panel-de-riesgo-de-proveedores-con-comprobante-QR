@@ -16,8 +16,10 @@ const esc = (texto) => String(texto == null ? '' : texto)
 
 // Junta el resultado de una revisión de pagos y arma el correo para tesorería
 class ResumenRevision {
-  constructor({ fecha = new Date(), panelUrl = 'http://127.0.0.1:3000' } = {}) {
+  // tendencia = resultado de HistorialTendencia.analizar() (reto 4), opcional
+  constructor({ fecha = new Date(), panelUrl = 'http://127.0.0.1:3000', tendencia = null } = {}) {
     this.fecha = fecha;
+    this.tendencia = tendencia;
     this.panelUrl = panelUrl;
     this.pagos = [];
   }
@@ -91,6 +93,7 @@ class ResumenRevision {
   </div>
   <div style="border:1px solid #e2e8f0;border-top:0;padding:16px 20px;border-radius:0 0 10px 10px;">
     ${this.morosos().length ? `<p style="background:#fee2e2;color:#7f1d1d;padding:10px 12px;border-radius:8px;margin:0 0 12px;"><b>Atención:</b> ${this.morosos().length === 1 ? 'se detectó 1 proveedor moroso ante Hacienda. Su pago quedó retenido.' : `se detectaron ${this.morosos().length} proveedores morosos ante Hacienda. Sus pagos quedaron retenidos.`}</p>` : ''}
+    ${this.#bloqueTendencia()}
     <table style="border-collapse:separate;border-spacing:8px 0;margin-left:-8px;"><tr>
       ${chip('aprobado', 'Aprobados')}${chip('retenido', 'Retenidos')}${chip('revision_manual', 'Revisión manual')}${chip('error_verificacion', 'Con error')}
     </tr></table>
@@ -101,9 +104,21 @@ class ResumenRevision {
 </div>`;
   }
 
+  #bloqueTendencia() {
+    if (!this.tendencia) return '';
+    const estilos = {
+      empeorando: ['#fff7ed', '#9a3412', '▲'],
+      mejorando: ['#ecfdf5', '#065f46', '▼'],
+      estable: ['#f1f5f9', '#334155', '►'],
+      sin_historial: ['#f1f5f9', '#334155', '•']
+    };
+    const [fondo, color, flecha] = estilos[this.tendencia.tendencia] || estilos.estable;
+    return `<p style="background:${fondo};color:${color};padding:10px 12px;border-radius:8px;margin:0 0 12px;"><b>${flecha} Tendencia del riesgo: ${esc(this.tendencia.etiqueta)}.</b> ${esc(this.tendencia.mensaje)}</p>`;
+  }
+
   // Lo que recibe el nodo "¿Hay situaciones críticas?" y el envío de correo
   aJSON() {
-    return { enviar: this.hayCriticos(), asunto: this.asunto(), html: this.html(), totales: this.totales(), revisados: this.pagos.length };
+    return { enviar: this.hayCriticos(), asunto: this.asunto(), html: this.html(), totales: this.totales(), revisados: this.pagos.length, tendencia: this.tendencia };
   }
 }
 

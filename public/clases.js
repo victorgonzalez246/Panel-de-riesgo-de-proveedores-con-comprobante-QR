@@ -518,6 +518,91 @@ class DiagnosticoProveedor {
   }
 }
 
+// ---------- src/HistorialTendencia.js ----------
+// Reto 4 de la extensión: ¿el riesgo de los proveedores va mejorando o empeorando?
+//
+// Índice de riesgo de una revisión = pagos detenidos o enviados a revisión manual / pagos revisados.
+// La revisión actual se compara con el promedio de las anteriores (hasta `ventana` revisiones).
+
+const ETIQUETAS_TENDENCIA = {
+  empeorando: 'Empeorando',
+  mejorando: 'Mejorando',
+  estable: 'Estable',
+  sin_historial: 'Sin historial'
+};
+
+class HistorialTendencia {
+  constructor(revisionesAnteriores = [], { ventana = 5, margen = 0.1 } = {}) {
+    this.ventana = ventana;
+    this.margen = margen; // diferencia mínima (en proporción) para hablar de cambio: 0.1 = 10 puntos
+    // Solo cuentan las revisiones que revisaron al menos un pago; de la más reciente a la más antigua
+    this.revisiones = revisionesAnteriores
+      .filter((r) => r && r.totales && HistorialTendencia.revisados(r.totales) > 0)
+      .sort((a, b) => String(b.fecha || '').localeCompare(String(a.fecha || '')))
+      .slice(0, ventana);
+  }
+
+  static revisados(totales) {
+    return Object.values(totales || {}).reduce((suma, n) => suma + (Number(n) || 0), 0);
+  }
+
+  // Proporción de pagos con problema (0 a 1); null si no se revisó nada
+  static indiceRiesgo(totales) {
+    const revisados = HistorialTendencia.revisados(totales);
+    if (!revisados) return null;
+    return ((Number(totales.retenido) || 0) + (Number(totales.revision_manual) || 0)) / revisados;
+  }
+
+  static porcentaje(indice) {
+    return `${Math.round(indice * 100)} %`;
+  }
+
+  promedioAnterior() {
+    if (!this.revisiones.length) return null;
+    const indices = this.revisiones.map((r) => HistorialTendencia.indiceRiesgo(r.totales));
+    return indices.reduce((suma, i) => suma + i, 0) / indices.length;
+  }
+
+  // totalesActuales = { aprobado, retenido, revision_manual, error_verificacion } de la revisión que termina
+  analizar(totalesActuales) {
+    const indiceActual = HistorialTendencia.indiceRiesgo(totalesActuales);
+    const indicePrevio = this.promedioAnterior();
+    const comparadas = this.revisiones.length;
+
+    if (indiceActual === null || indicePrevio === null) {
+      return this.#resultado('sin_historial', indiceActual, null, comparadas,
+        'Es la primera revisión registrada: todavía no hay con qué comparar.');
+    }
+
+    const diferencia = indiceActual - indicePrevio;
+    const ahora = HistorialTendencia.porcentaje(indiceActual);
+    const antes = HistorialTendencia.porcentaje(indicePrevio);
+    const referencia = comparadas === 1 ? 'en la revisión anterior' : `en promedio en las últimas ${comparadas} revisiones`;
+
+    if (diferencia > this.margen) {
+      return this.#resultado('empeorando', indiceActual, indicePrevio, comparadas,
+        `El riesgo subió: el ${ahora} de los pagos quedó detenido o en revisión, frente al ${antes} ${referencia}.`);
+    }
+    if (diferencia < -this.margen) {
+      return this.#resultado('mejorando', indiceActual, indicePrevio, comparadas,
+        `El riesgo bajó: el ${ahora} de los pagos quedó detenido o en revisión, frente al ${antes} ${referencia}.`);
+    }
+    return this.#resultado('estable', indiceActual, indicePrevio, comparadas,
+      `Sin cambios importantes: el ${ahora} de los pagos quedó detenido o en revisión (${antes} ${referencia}).`);
+  }
+
+  #resultado(tendencia, indiceActual, indicePrevio, comparadas, mensaje) {
+    return {
+      tendencia,
+      etiqueta: ETIQUETAS_TENDENCIA[tendencia],
+      indiceActual: indiceActual === null ? null : Math.round(indiceActual * 1000) / 1000,
+      indicePrevio: indicePrevio === null ? null : Math.round(indicePrevio * 1000) / 1000,
+      revisionesComparadas: comparadas,
+      mensaje
+    };
+  }
+}
+
 // ---------- src/ResumenRevision.js ----------
 // Estados que tesorería tiene que atender (Reto 3 de la extensión)
 const ESTADOS_CRITICOS = ['retenido', 'revision_manual', 'error_verificacion'];
@@ -534,8 +619,10 @@ const esc = (texto) => String(texto == null ? '' : texto)
 
 // Junta el resultado de una revisión de pagos y arma el correo para tesorería
 class ResumenRevision {
-  constructor({ fecha = new Date(), panelUrl = 'http://127.0.0.1:3000' } = {}) {
+  // tendencia = resultado de HistorialTendencia.analizar() (reto 4), opcional
+  constructor({ fecha = new Date(), panelUrl = 'http://127.0.0.1:3000', tendencia = null } = {}) {
     this.fecha = fecha;
+    this.tendencia = tendencia;
     this.panelUrl = panelUrl;
     this.pagos = [];
   }
@@ -609,6 +696,7 @@ class ResumenRevision {
   </div>
   <div style="border:1px solid #e2e8f0;border-top:0;padding:16px 20px;border-radius:0 0 10px 10px;">
     ${this.morosos().length ? `<p style="background:#fee2e2;color:#7f1d1d;padding:10px 12px;border-radius:8px;margin:0 0 12px;"><b>Atención:</b> ${this.morosos().length === 1 ? 'se detectó 1 proveedor moroso ante Hacienda. Su pago quedó retenido.' : `se detectaron ${this.morosos().length} proveedores morosos ante Hacienda. Sus pagos quedaron retenidos.`}</p>` : ''}
+    ${this.#bloqueTendencia()}
     <table style="border-collapse:separate;border-spacing:8px 0;margin-left:-8px;"><tr>
       ${chip('aprobado', 'Aprobados')}${chip('retenido', 'Retenidos')}${chip('revision_manual', 'Revisión manual')}${chip('error_verificacion', 'Con error')}
     </tr></table>
@@ -619,11 +707,23 @@ class ResumenRevision {
 </div>`;
   }
 
+  #bloqueTendencia() {
+    if (!this.tendencia) return '';
+    const estilos = {
+      empeorando: ['#fff7ed', '#9a3412', '▲'],
+      mejorando: ['#ecfdf5', '#065f46', '▼'],
+      estable: ['#f1f5f9', '#334155', '►'],
+      sin_historial: ['#f1f5f9', '#334155', '•']
+    };
+    const [fondo, color, flecha] = estilos[this.tendencia.tendencia] || estilos.estable;
+    return `<p style="background:${fondo};color:${color};padding:10px 12px;border-radius:8px;margin:0 0 12px;"><b>${flecha} Tendencia del riesgo: ${esc(this.tendencia.etiqueta)}.</b> ${esc(this.tendencia.mensaje)}</p>`;
+  }
+
   // Lo que recibe el nodo "¿Hay situaciones críticas?" y el envío de correo
   aJSON() {
-    return { enviar: this.hayCriticos(), asunto: this.asunto(), html: this.html(), totales: this.totales(), revisados: this.pagos.length };
+    return { enviar: this.hayCriticos(), asunto: this.asunto(), html: this.html(), totales: this.totales(), revisados: this.pagos.length, tendencia: this.tendencia };
   }
 }
 
-  return { REGLAS, ESTADOS, Proveedor, Pago, ComprobanteQR, EvaluadorRiesgo, DiagnosticoProveedor };
+  return { REGLAS, ESTADOS, Proveedor, Pago, ComprobanteQR, EvaluadorRiesgo, DiagnosticoProveedor, HistorialTendencia };
 })();
