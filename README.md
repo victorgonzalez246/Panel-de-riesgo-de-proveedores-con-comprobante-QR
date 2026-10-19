@@ -147,10 +147,10 @@ Panel en **http://127.0.0.1:3000** (lo sirve JSON Server desde `public/`). Los d
 | **Inicio** | Guía de los 4 pasos con el estado de cada uno (consultas de hoy, pagos por revisar, comprobantes, último correo). |
 | **Registrar pago** | Formulario para anotar un pago nuevo (proveedor de una lista, monto, moneda, concepto, fecha de vencimiento con calendario). Se guarda en JSON Server como *pendiente*. Valida con `Pago.camposFaltantes()` y avisa con `requiereAprobacionManual()` si el monto irá a un supervisor. |
 | **Proveedores** | Lista de proveedores, alta de uno nuevo (valida la cédula con `Proveedor.validarCedula()` y evita repetidos), activar o desactivar (R7) y consultar en Hacienda con un clic. |
-| **1. Consultar proveedor** | Escribir una cédula (acepta guiones) y saber si se le puede pagar, por qué y qué hacer; historial con hora de Costa Rica y filtro *Se puede pagar / No pagar*. |
-| **2. Revisar pagos** | Botón que lanza el workflow principal (`POST /webhook/revision-pagos`) y muestra el avance por etapas; tabla de pagos con filtros y una columna *Qué hacer*. |
-| **3. Comprobantes** | Los QR de los pagos aprobados, para escanear, abrir o descargar. |
-| **4. Avisos por correo** | Si la última revisión envió el correo a tesorería, no hizo falta o falló, y el historial de revisiones (`/revisiones`). |
+| **** | Escribir una cédula (acepta guiones) y saber si se le puede pagar, por qué y qué hacer; historial con hora de Costa Rica y filtro *Se puede pagar / No pagar*. |
+| **** | Botón que lanza el workflow principal (`POST /webhook/revision-pagos`) y muestra el avance por etapas; tabla de pagos con filtros y una columna *Qué hacer*. |
+| **** | Los QR de los pagos aprobados, para escanear, abrir o descargar. |
+| **** | Si la última revisión envió el correo a tesorería, no hizo falta o falló, y el historial de revisiones (`/revisiones`). |
 
 ![Panel: inicio](docs/img/panel-inicio.png)
 

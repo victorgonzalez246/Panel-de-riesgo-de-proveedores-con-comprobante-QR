@@ -19,6 +19,7 @@
   .ms.linea { font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24; }
   .icono-menu .ms { font-size: 18px; vertical-align: 0; }
   .seccion-titulo .num .ms { font-size: 20px; vertical-align: 0; }
+  .paso .num .ms { font-size: 18px; vertical-align: 0; }
   .veredicto .icono .ms { font-size: 22px; vertical-align: 0; font-variation-settings: 'FILL' 1, 'wght' 700, 'GRAD' 0, 'opsz' 24; }
   .progreso li .marca .ms { font-size: 15px; vertical-align: 0; font-variation-settings: 'FILL' 1, 'wght' 700, 'GRAD' 0, 'opsz' 20; }
   .correo-estado .icono .ms { font-size: 30px; vertical-align: 0; color: var(--marca-2); }
@@ -237,11 +238,11 @@
       <li class="titulo-grupo">Registro</li>
       <li><a href="#nuevo-pago" data-vista="nuevo-pago"><span class="icono-menu"><span class="ms" aria-hidden="true">add_card</span></span>Registrar pago</a></li>
       <li><a href="#proveedores" data-vista="proveedores"><span class="icono-menu"><span class="ms" aria-hidden="true">storefront</span></span>Proveedores<span class="contador" id="m-proveedores"></span></a></li>
-      <li class="titulo-grupo">Pasos</li>
-      <li><a href="#paso1" data-vista="paso1"><span class="icono-menu"><span class="ms" aria-hidden="true">person_search</span></span>1. Consultar proveedor</a></li>
-      <li><a href="#paso2" data-vista="paso2"><span class="icono-menu"><span class="ms" aria-hidden="true">fact_check</span></span>2. Revisar pagos<span class="contador alerta-c" id="m-pendientes"></span></a></li>
-      <li><a href="#paso3" data-vista="paso3"><span class="icono-menu"><span class="ms" aria-hidden="true">qr_code_2</span></span>3. Comprobantes<span class="contador" id="m-comprobantes"></span></a></li>
-      <li><a href="#paso4" data-vista="paso4"><span class="icono-menu"><span class="ms" aria-hidden="true">mail</span></span>4. Avisos por correo</a></li>
+      <li class="titulo-grupo">Operación</li>
+      <li><a href="#paso1" data-vista="paso1"><span class="icono-menu"><span class="ms" aria-hidden="true">person_search</span></span>Consultar proveedor</a></li>
+      <li><a href="#paso2" data-vista="paso2"><span class="icono-menu"><span class="ms" aria-hidden="true">fact_check</span></span>Revisar pagos<span class="contador alerta-c" id="m-pendientes"></span></a></li>
+      <li><a href="#paso3" data-vista="paso3"><span class="icono-menu"><span class="ms" aria-hidden="true">qr_code_2</span></span>Comprobantes<span class="contador" id="m-comprobantes"></span></a></li>
+      <li><a href="#paso4" data-vista="paso4"><span class="icono-menu"><span class="ms" aria-hidden="true">mail</span></span>Avisos por correo</a></li>
       <li class="titulo-grupo">Soporte</li>
       <li><a href="#ayuda" data-vista="ayuda"><span class="icono-menu"><span class="ms" aria-hidden="true">help</span></span>Ayuda</a></li>
     </ul>
@@ -267,25 +268,25 @@
     <p class="sub" style="margin-bottom:0">Siga los pasos en orden. Puede hacer clic en cualquiera para ir directo.</p>
     <div class="pasos">
       <a class="paso" href="#paso1" id="guia1">
-        <span class="num">1</span>
+        <span class="num"><span class="ms" aria-hidden="true">person_search</span></span>
         <strong>Consultar un proveedor</strong>
         <span class="desc">Escriba su cédula y sepa al instante si le puede pagar.</span>
         <span class="estado" id="guia1-estado">—</span>
       </a>
       <a class="paso" href="#paso2" id="guia2">
-        <span class="num">2</span>
+        <span class="num"><span class="ms" aria-hidden="true">fact_check</span></span>
         <strong>Revisar los pagos</strong>
         <span class="desc">El sistema verifica todos los pagos pendientes y aprueba los que están al día.</span>
         <span class="estado" id="guia2-estado">—</span>
       </a>
       <a class="paso" href="#paso3" id="guia3">
-        <span class="num">3</span>
+        <span class="num"><span class="ms" aria-hidden="true">qr_code_2</span></span>
         <strong>Descargar comprobantes</strong>
         <span class="desc">Cada pago aprobado tiene un código QR con sus datos.</span>
         <span class="estado" id="guia3-estado">—</span>
       </a>
       <a class="paso" href="#paso4" id="guia4">
-        <span class="num">4</span>
+        <span class="num"><span class="ms" aria-hidden="true">mail</span></span>
         <strong>Aviso por correo</strong>
         <span class="desc">Si algún pago queda detenido, tesorería recibe un correo con el detalle.</span>
         <span class="estado" id="guia4-estado">—</span>
@@ -294,14 +295,14 @@
   </section>
   <section class="tarjeta">
     <h2>¿Primera vez aquí?</h2>
-    <p class="sub" style="margin-bottom:0">Empiece por el <a class="enlace" href="#paso1">paso 1</a> con uno de los ejemplos: verá en segundos si se le puede pagar a ese proveedor. ¿Tiene una factura nueva por pagar? Regístrela en <a class="enlace" href="#nuevo-pago">Registrar pago</a>; si el proveedor no aparece en la lista, agréguelo primero en <a class="enlace" href="#proveedores">Proveedores</a>. Si una palabra no le queda clara, consulte la <a class="enlace" href="#ayuda">Ayuda</a>.</p>
+    <p class="sub" style="margin-bottom:0">Empiece por <a class="enlace" href="#paso1">Consultar proveedor</a> con uno de los ejemplos: verá en segundos si se le puede pagar a ese proveedor. ¿Tiene una factura nueva por pagar? Regístrela en <a class="enlace" href="#nuevo-pago">Registrar pago</a>; si el proveedor no aparece en la lista, agréguelo primero en <a class="enlace" href="#proveedores">Proveedores</a>. Si una palabra no le queda clara, consulte la <a class="enlace" href="#ayuda">Ayuda</a>.</p>
   </section>
   </div>
 
   <!-- REGISTRAR PAGO -->
   <section class="tarjeta vista" id="nuevo-pago">
     <div class="seccion-titulo"><span class="num"><span class="ms" aria-hidden="true">add_card</span></span><h2>Registrar un pago nuevo</h2></div>
-    <p class="sub">Anote aquí cada factura que haya que pagarle a un proveedor. Queda como <b>«Por revisar»</b> hasta que la revisión del paso 2 la verifique en Hacienda.</p>
+    <p class="sub">Anote aquí cada factura que haya que pagarle a un proveedor. Queda como <b>«Por revisar»</b> hasta que la revisión de «Revisar pagos» la verifique en Hacienda.</p>
     <form id="form-pago" class="formulario" novalidate>
       <label class="campo ancho">Proveedor
         <select id="pago-proveedor"><option value="">— Elija un proveedor —</option></select>
@@ -375,7 +376,7 @@
 
   <!-- PASO 1 -->
   <section class="tarjeta vista" id="paso1">
-    <div class="seccion-titulo"><span class="num">1</span><h2>Consultar un proveedor</h2></div>
+    <div class="seccion-titulo"><span class="num"><span class="ms" aria-hidden="true">person_search</span></span><h2>Consultar un proveedor</h2></div>
     <p class="sub">Úselo antes de registrar un pago nuevo, o si un proveedor le dice que ya se puso al día.</p>
     <div class="rejilla">
       <div>
@@ -415,7 +416,7 @@
 
   <!-- PASO 2 -->
   <section class="tarjeta vista" id="paso2">
-    <div class="seccion-titulo"><span class="num">2</span><h2>Revisar los pagos pendientes</h2></div>
+    <div class="seccion-titulo"><span class="num"><span class="ms" aria-hidden="true">fact_check</span></span><h2>Revisar los pagos pendientes</h2></div>
     <p class="sub">El sistema consulta a Hacienda por cada proveedor. Los que están al día se aprueban con su comprobante; los demás quedan detenidos con el motivo y lo que hay que hacer.</p>
 
     <div class="accion-principal">
@@ -460,20 +461,20 @@
         <tbody id="pagos"><tr><td colspan="4" class="vacio">Cargando…</td></tr></tbody>
       </table>
     </div>
-    <div class="navegacion-pasos"><a href="#paso1">← Paso 1</a><a href="#paso3">Siguiente: comprobantes →</a></div>
+    <div class="navegacion-pasos"><a href="#paso1">← Consultar proveedor</a><a href="#paso3">Siguiente: comprobantes →</a></div>
   </section>
 
   <!-- PASO 3 -->
   <section class="tarjeta vista" id="paso3">
-    <div class="seccion-titulo"><span class="num">3</span><h2>Comprobantes de los pagos aprobados</h2></div>
+    <div class="seccion-titulo"><span class="num"><span class="ms" aria-hidden="true">qr_code_2</span></span><h2>Comprobantes de los pagos aprobados</h2></div>
     <p class="sub">Escanee el código QR con la cámara del celular para ver los datos del pago, o descárguelo para adjuntarlo al pago.</p>
     <div class="comprobantes" id="comprobantes"><div class="vacio">Cargando…</div></div>
-    <div class="navegacion-pasos"><a href="#paso2">← Paso 2</a><a href="#paso4">Siguiente: avisos por correo →</a></div>
+    <div class="navegacion-pasos"><a href="#paso2">← Revisar pagos</a><a href="#paso4">Siguiente: avisos por correo →</a></div>
   </section>
 
   <!-- PASO 4 -->
   <section class="tarjeta vista" id="paso4">
-    <div class="seccion-titulo"><span class="num">4</span><h2>Avisos por correo a tesorería</h2></div>
+    <div class="seccion-titulo"><span class="num"><span class="ms" aria-hidden="true">mail</span></span><h2>Avisos por correo a tesorería</h2></div>
     <p class="sub">Después de cada revisión, si hay pagos detenidos o que necesitan aprobación, se envía un correo con el resumen. Si todo sale aprobado, no se envía nada.</p>
     <div class="correo-estado" id="correo-estado"><span class="icono"><span class="ms" aria-hidden="true">mail</span></span><div>Cargando…</div></div>
     <div class="tabla-scroll">
@@ -482,18 +483,18 @@
         <tbody id="revisiones"><tr><td colspan="3" class="vacio">Cargando…</td></tr></tbody>
       </table>
     </div>
-    <div class="navegacion-pasos"><a href="#paso3">← Paso 3</a><a href="#inicio">Volver al inicio →</a></div>
+    <div class="navegacion-pasos"><a href="#paso3">← Comprobantes</a><a href="#inicio">Volver al inicio →</a></div>
   </section>
 
   <section class="tarjeta vista" id="ayuda">
     <details class="glosario" open>
       <summary><span class="ms" aria-hidden="true">menu_book</span> ¿Qué significa cada estado?</summary>
       <div class="glosario-lista">
-        <div><span class="etiqueta e-verde">Aprobado</span><p>El proveedor está al día con Hacienda. Se puede pagar; el comprobante QR está en el paso 3.</p></div>
+        <div><span class="etiqueta e-verde">Aprobado</span><p>El proveedor está al día con Hacienda. Se puede pagar; el comprobante QR está en «Comprobantes».</p></div>
         <div><span class="etiqueta e-rojo">Detenido</span><p>No se debe pagar: el proveedor tiene deudas o declaraciones pendientes con Hacienda, no está registrado o sus datos están mal.</p></div>
         <div><span class="etiqueta e-azul">Necesita aprobación</span><p>El proveedor puede estar al día, pero el monto es alto o faltan datos. Una persona debe revisarlo y decidir.</p></div>
         <div><span class="etiqueta e-amarillo">Se reintentará</span><p>Hacienda no respondió en ese momento. El sistema vuelve a intentarlo en la siguiente revisión (hasta 3 veces).</p></div>
-        <div><span class="etiqueta e-gris">Por revisar</span><p>El pago todavía no se ha verificado. Pulse «Revisar pagos ahora» en el paso 2.</p></div>
+        <div><span class="etiqueta e-gris">Por revisar</span><p>El pago todavía no se ha verificado. Pulse «Revisar pagos ahora» en «Revisar pagos».</p></div>
         <div><span class="etiqueta e-amarillo">Prioridad alta</span><p>La fecha de vencimiento del pago ya pasó. Conviene atenderlo primero.</p></div>
       </div>
     </details>
@@ -529,7 +530,7 @@
   };
   // Qué hacer según la regla que detuvo el pago (el código va al inicio del motivo, ej. "[R1] ...")
   const QUE_HACER = {
-    OK: 'Puede pagar. Descargue el comprobante en el paso 3.',
+    OK: 'Puede pagar. Descargue el comprobante en «Comprobantes».',
     R1: 'No pagar. Pedirle al proveedor que pague sus deudas con Hacienda.',
     R2: 'No pagar. Pedirle al proveedor que presente sus declaraciones.',
     R3: 'No pagar. El proveedor debe regularizar su inscripción en Hacienda.',
@@ -819,7 +820,7 @@
       const t = (revision && revision.totales) || {};
       $('progreso-titulo').innerHTML = `${ic('task_alt')} Revisión terminada`;
       $('resumen-final').style.display = 'block';
-      $('resumen-final').innerHTML = `Resultado: <b style="color:var(--ok)">${t.aprobado || 0} aprobado${t.aprobado === 1 ? '' : 's'}</b>, <b style="color:var(--mal)">${t.retenido || 0} detenido${t.retenido === 1 ? '' : 's'}</b>, <b style="color:var(--info)">${t.revision_manual || 0} necesita${t.revision_manual === 1 ? '' : 'n'} aprobación</b>${t.error_verificacion ? `, <b style="color:var(--aviso)">${t.error_verificacion} se reintentará${t.error_verificacion === 1 ? '' : 'n'}</b>` : ''}. Revise la columna «Qué hacer» de la tabla, y los comprobantes en el <a class="enlace" href="#paso3">paso 3</a>.`;
+      $('resumen-final').innerHTML = `Resultado: <b style="color:var(--ok)">${t.aprobado || 0} aprobado${t.aprobado === 1 ? '' : 's'}</b>, <b style="color:var(--mal)">${t.retenido || 0} detenido${t.retenido === 1 ? '' : 's'}</b>, <b style="color:var(--info)">${t.revision_manual || 0} necesita${t.revision_manual === 1 ? '' : 'n'} aprobación</b>${t.error_verificacion ? `, <b style="color:var(--aviso)">${t.error_verificacion} se reintentará${t.error_verificacion === 1 ? '' : 'n'}</b>` : ''}. Revise la columna «Qué hacer» de la tabla, y los comprobantes en <a class="enlace" href="#paso3">Comprobantes</a>.`;
     } catch (e) {
       sistema.n8n = false;
       pintarSistema();
@@ -848,7 +849,7 @@
         <div class="meta">Aprobado ${horaLocal(p.fechaRevision)}</div>
         ${p.prioridad === 'alta' ? '<div style="margin-top:6px"><span class="etiqueta e-amarillo">Prioridad alta · vencido</span></div>' : ''}
         <div class="acciones"><a class="enlace" href="${esc(p.qrUrl)}" target="_blank" rel="noopener">Abrir</a><a class="enlace" href="${esc(p.qrUrl.replace('size=250x250', 'size=600x600'))}" download="${esc(p.comprobante)}.png" target="_blank" rel="noopener">Descargar</a></div>
-      </div>`).join('') || `<div class="vacio" style="grid-column:1/-1">Todavía no hay comprobantes. Aparecen aquí cuando el <a class="enlace" href="#paso2">paso 2</a> aprueba un pago.</div>`;
+      </div>`).join('') || `<div class="vacio" style="grid-column:1/-1">Todavía no hay comprobantes. Aparecen aquí cuando <a class="enlace" href="#paso2">Revisar pagos</a> aprueba un pago.</div>`;
   }
 
   // ---------- Paso 4: correo ----------
@@ -856,7 +857,7 @@
     const ultima = datos.revisiones[0];
     let icono = 'mail', html;
     if (!ultima) {
-      html = '<b>Todavía no hay revisiones registradas.</b><div class="detalle">Cuando ejecute el paso 2, aquí verá si se avisó a tesorería.</div>';
+      html = '<b>Todavía no hay revisiones registradas.</b><div class="detalle">Cuando revise los pagos, aquí verá si se avisó a tesorería.</div>';
     } else if (ultima.correoEnviado) {
       icono = 'mark_email_read';
       html = `<b>Último aviso enviado ${hace(ultima.fecha)}</b><div class="detalle">Asunto: «${esc(ultima.asunto)}». Revise la bandeja de entrada de tesorería (o la carpeta de spam la primera vez).</div>`;
